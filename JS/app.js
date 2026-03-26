@@ -53,6 +53,7 @@ function cargarDatosDesdeServidor() {
             if (data) {
                 choferesRegistrados = data.choferes || [];
                 movilesRegistrados = data.moviles || [];
+                horariosRegistrados = data.horarios || [];
                 actualizarLocalStorage();
                 
                 // Si estamos en la página de DatosChoferes, recargamos la tabla
@@ -313,9 +314,28 @@ function registrarEvento(boton, tipo) {
         fila.querySelector('.hora-salida').value = horaActual;
     }
 
-    fila.querySelector('.input-movil-asignado').disabled = true;
-    boton.disabled = true; // Bloquear el botón para que no se pueda borrar/re-escribir
-    localStorage.setItem('horarios', JSON.stringify(horariosRegistrados));
+    // Enviar al servidor para que todos lo vean
+    fetch('../php/guardar_horario.php', {
+        method: 'POST',
+        body: JSON.stringify({
+            chofer: nombreChofer,
+            movil: nroMovil,
+            fecha: fechaSeleccionada,
+            hora: horaActual,
+            tipo: tipo
+        }),
+        headers: { 'Content-Type': 'application/json' }
+    })
+    .then(res => res.json())
+    .then(data => {
+        if (data.success) {
+            fila.querySelector('.input-movil-asignado').disabled = true;
+            boton.disabled = true;
+            localStorage.setItem('horarios', JSON.stringify(horariosRegistrados));
+        } else {
+            alert("Error al guardar horario: " + data.error);
+        }
+    });
 }
 
 btnCancelar.addEventListener('click', cerrarModal);
