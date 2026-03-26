@@ -1,0 +1,58 @@
+/*Roots*/
+:root{
+	--AzulMedio: #6699C9;
+	--AzulOscuro: #3c6d9e;
+	--Blanco: #ffffff;
+}
+
+/* Generales */
+html{
+	font-size: 62.5%;
+    box-sizing: border-box;
+    }
+*, *:before, *:after {
+    box-sizing: inherit;
+}
+body{
+	font-size: 16px;
+}
+
+/*Index.htm*/
+.body--index{
+    background-image: linear-gradient(to top, var(--AzulMedio) 0%, var(--Blanco) 100%);
+    margin: 0;
+    min-height: 100vh;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+.botones--index{
+    display: flex;
+    flex-direction: row;
+    justify-content: center;
+    align-items: center;
+    gap: 4rem; /* Espacio opcional entre botones */
+}
+
+.DatosChoferes,
+.Horarios {
+    display: inline-block;
+    width: 250px;
+    text-align: center;
+    background-color: var(--Blanco);
+    color: black;
+    text-decoration: none !important;
+    border-radius: 8px;
+    font-size: 2rem;
+    font-weight: bold;
+    padding: 2rem;
+    border: 2px solid black;
+    transition: background-color 0.3s ease;
+}
+
+.DatosChoferes:hover,
+.Horarios:hover {
+    text-decoration: none;
+    background-color: hwb(184 54% 29%);
+}
