@@ -57,3 +57,15 @@ body{
     text-decoration: none;
     background-color: hwb(184 54% 29%);
 }
+
+/*Choferes y horarios atributos*/
+
+.body--duo{
+    background-image: linear-gradient(to top, var(--AzulMedio) 0%, var(--Blanco) 100%);
+    margin: 0;
+    min-height: 100vh;
+}
+
+.logo--header{
+    display: flex;
+}
