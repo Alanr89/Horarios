@@ -13,6 +13,14 @@ const modalTitulo = document.getElementById('modal-titulo');
 const btnConfirmar = document.getElementById('btn-modal-confirmar');
 const btnCancelar = document.getElementById('btn-modal-cancelar');
 
+// Referencias al Modal de Modificar Móvil
+const btnModificarMovil = document.getElementById('btn-modificar-movil');
+const modalModMovil = document.getElementById('modal-modificar-movil');
+const buscarMovilEdit = document.getElementById('buscar-movil-edit');
+const formModMovilCampos = document.getElementById('form-modificar-movil-campos');
+const btnConfirmarModMovil = document.getElementById('btn-confirmar-mod-movil');
+const btnCancelarModMovil = document.getElementById('btn-cancelar-mod-movil');
+
 // Referencias a los formularios internos
 const formChofer = document.getElementById('form-chofer');
 const formMovil = document.getElementById('form-movil');
@@ -105,6 +113,39 @@ if (btnMovil) {
     btnMovil.addEventListener('click', () => abrirModal("Datos del Móvil", listaMoviles, 'movil'));
 }
 
+// Lógica para abrir el buscador de móviles
+if (btnModificarMovil) {
+    btnModificarMovil.addEventListener('click', () => {
+        buscarMovilEdit.value = "";
+        formModMovilCampos.classList.add('oculto');
+        modalModMovil.classList.remove('oculto');
+    });
+}
+
+// Buscar datos del móvil al escribir en el modal de edición
+if (buscarMovilEdit) {
+    buscarMovilEdit.addEventListener('input', () => {
+        const nro = buscarMovilEdit.value.trim();
+        const movil = movilesRegistrados.find(m => m.numero === nro);
+        
+        if (movil) {
+            formModMovilCampos.classList.remove('oculto');
+            document.getElementById('edit-movil-numero').value = movil.numero;
+            document.getElementById('edit-movil-marca').value = movil.marca;
+            document.getElementById('edit-movil-modelo').value = movil.modelo;
+            document.getElementById('edit-movil-patente').value = movil.patente;
+        } else {
+            formModMovilCampos.classList.add('oculto');
+        }
+    });
+}
+
+if (btnCancelarModMovil) {
+    btnCancelarModMovil.addEventListener('click', () => {
+        modalModMovil.classList.add('oculto');
+    });
+}
+
 // Función para cargar la tabla de horarios según la fecha seleccionada
 function cargarTablaHorarios() {
     if (!tablaHorariosBody) return;
@@ -116,12 +157,13 @@ function cargarTablaHorarios() {
 
     if (!fechaSeleccionada) return;
 
-    movilesRegistrados.forEach(movil => {
-        const registro = horariosRegistrados.find(h => h.movil === movil.numero && h.fecha === fechaSeleccionada);
+    choferesRegistrados.forEach(chofer => {
+        const registro = horariosRegistrados.find(h => h.chofer === chofer.nombre && h.fecha === fechaSeleccionada);
         
         const nuevaFila = document.createElement('div');
         nuevaFila.classList.add('fila');
         
+        const movilAsignado = registro ? registro.movil : '';
         const entradaHora = registro ? registro.entrada : '--:--';
         const salidaHora = registro ? registro.salida : '--:--';
         const entradaDisabled = (entradaHora !== '--:--') ? 'disabled' : '';
@@ -129,10 +171,13 @@ function cargarTablaHorarios() {
 
         nuevaFila.innerHTML = `
             <div class="columna-check">
-                <input type="checkbox" class="row-checkbox" data-movil="${movil.numero}">
+                <input type="checkbox" class="row-checkbox" data-chofer="${chofer.nombre}">
             </div>
             <div class="columna-movil">
-                <p class="texto-movil">${movil.numero}</p>
+                <p class="texto-movil" style="font-size: 1.4rem;">${chofer.nombre}</p>
+            </div>
+            <div class="columna-movil">
+                <input type="text" class="input-tabla input-movil-asignado" list="lista-moviles" value="${movilAsignado}" placeholder="Nro Móvil" ${entradaDisabled}>
             </div>
             <div class="columna-entrada">
                 <button class="btn-entrada" ${entradaDisabled} onclick="registrarEvento(this, 'entrada')">Entrada</button>
@@ -245,15 +290,18 @@ function prepararEdicion(tipo, index) {
 // Registro de Horarios (Entrada/Salida)
 function registrarEvento(boton, tipo) {
     const fila = boton.closest('.fila');
-    const nroMovil = fila.querySelector('.texto-movil').textContent;
+    const nombreChofer = fila.querySelector('.texto-movil').textContent;
+    const nroMovil = fila.querySelector('.input-movil-asignado').value.trim();
     const fechaSeleccionada = buscadorFecha.value;
     const ahora = new Date();
     const horaActual = ahora.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
 
-    let registro = horariosRegistrados.find(h => h.movil === nroMovil && h.fecha === fechaSeleccionada);
+    if (!nroMovil) { alert("Debe asignar un número de móvil primero."); return; }
+
+    let registro = horariosRegistrados.find(h => h.chofer === nombreChofer && h.fecha === fechaSeleccionada);
 
     if (!registro) {
-        registro = { movil: nroMovil, fecha: fechaSeleccionada, entrada: '--:--', salida: '--:--' };
+        registro = { chofer: nombreChofer, movil: nroMovil, fecha: fechaSeleccionada, entrada: '--:--', salida: '--:--' };
         horariosRegistrados.push(registro);
     }
 
@@ -265,6 +313,7 @@ function registrarEvento(boton, tipo) {
         fila.querySelector('.hora-salida').value = horaActual;
     }
 
+    fila.querySelector('.input-movil-asignado').disabled = true;
     boton.disabled = true; // Bloquear el botón para que no se pueda borrar/re-escribir
     localStorage.setItem('horarios', JSON.stringify(horariosRegistrados));
 }
@@ -366,6 +415,26 @@ btnConfirmar.addEventListener('click', () => {
     }
 });
 
+if (btnConfirmarModMovil) {
+    btnConfirmarModMovil.addEventListener('click', () => {
+        const nro = document.getElementById('edit-movil-numero').value;
+        const index = movilesRegistrados.findIndex(m => m.numero === nro);
+
+        if (index !== -1) {
+            movilesRegistrados[index] = {
+                numero: nro,
+                marca: document.getElementById('edit-movil-marca').value.trim(),
+                modelo: document.getElementById('edit-movil-modelo').value.trim(),
+                patente: document.getElementById('edit-movil-patente').value.trim()
+            };
+            actualizarLocalStorage();
+            if (listaCuerpo) cargarTablaChoferes();
+            modalModMovil.classList.add('oculto');
+            alert("Móvil actualizado correctamente.");
+        }
+    });
+}
+
 function actualizarLocalStorage() {
     localStorage.setItem('choferes', JSON.stringify(choferesRegistrados));
     localStorage.setItem('moviles', JSON.stringify(movilesRegistrados));
@@ -447,10 +516,10 @@ if (btnConfirmarExport) {
     btnConfirmarExport.addEventListener('click', () => {
         const desde = fechaDesdeExport.value;
         const hasta = fechaHastaExport.value;
-        const seleccionados = Array.from(document.querySelectorAll('.row-checkbox:checked')).map(cb => cb.dataset.movil);
+        const seleccionados = Array.from(document.querySelectorAll('.row-checkbox:checked')).map(cb => cb.dataset.chofer);
 
         if (!desde || !hasta || seleccionados.length === 0) {
-            alert("Debe seleccionar fechas y al menos un móvil.");
+            alert("Debe seleccionar fechas y al menos un chofer.");
             return;
         }
 
@@ -458,7 +527,7 @@ if (btnConfirmarExport) {
         const datosFiltrados = horariosRegistrados.filter(h => 
             h.fecha >= desde && 
             h.fecha <= hasta && 
-            seleccionados.includes(h.movil)
+            seleccionados.includes(h.chofer)
         );
 
         if (datosFiltrados.length === 0) {
@@ -477,9 +546,9 @@ if (btnConfirmarExport) {
         
         Object.keys(agrupadosPorFecha).sort().forEach(fecha => {
             csvContent += `FECHA DEL REGISTRO: ${fecha}\n`;
-            csvContent += `Móvil;Entrada;Salida\n`;
+            csvContent += `Chofer;Móvil;Entrada;Salida\n`;
             agrupadosPorFecha[fecha].forEach(reg => {
-                csvContent += `${reg.movil};${reg.entrada};${reg.salida}\n`;
+                csvContent += `${reg.chofer};${reg.movil};${reg.entrada};${reg.salida}\n`;
             });
             csvContent += `\n`; // Espacio entre "hojas"/fechas
         });

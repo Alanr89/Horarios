@@ -21,9 +21,10 @@ CREATE TABLE IF NOT EXISTS moviles (
 
 CREATE TABLE IF NOT EXISTS horarios (
     id INT AUTO_INCREMENT PRIMARY KEY,
+    chofer_nombre VARCHAR(100),
     movil_numero VARCHAR(20),
     fecha DATE,
     entrada TIME,
     salida TIME,
-    UNIQUE KEY movil_fecha (movil_numero, fecha)
+    UNIQUE KEY chofer_fecha (chofer_nombre, fecha)
 );

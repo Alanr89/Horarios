@@ -22,6 +22,7 @@
     <nav class="botones--index">
         <button id="btn-agregar-chofer" class="DatosChoferes">Agregar chofer</button>
         <button id="btn-agregar-movil" class="Horarios">Agregar móvil</button>
+        <button id="btn-modificar-movil" class="Horarios">Modificar móvil</button>
         <button id="btn-exportar" class="Horarios" style="background-color: #28a745; color: white; border-color: #1e7e34;">Exportar información</button>
     </nav>
 
@@ -134,6 +135,44 @@
             <div class="modal-botones">
                 <button id="btn-modal-confirmar" class="btn-borrar" style="background-color: var(--AzulMedio);">Confirmar</button>
                 <button id="btn-modal-cancelar" class="btn-borrar">Cancelar</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal para Modificar Móvil (Búsqueda y Edición) -->
+    <div id="modal-modificar-movil" class="modal-overlay oculto">
+        <div class="modal-contenido">
+            <h2>Modificar Datos del Móvil</h2>
+            <div class="campo">
+                <label for="buscar-movil-edit">Seleccionar Móvil (Número):</label>
+                <input type="text" id="buscar-movil-edit" class="input-tabla" list="lista-moviles" placeholder="Escriba el número...">
+            </div>
+            
+            <div id="form-modificar-movil-campos" class="oculto">
+                <hr>
+                <div class="campo">
+                    <label for="edit-movil-numero">Número de Móvil</label>
+                    <input type="number" id="edit-movil-numero" class="input-tabla" readonly>
+                </div>
+                <div class="campo">
+                    <label for="edit-movil-marca">Marca</label>
+                    <input type="text" id="edit-movil-marca" class="input-tabla">
+                </div>
+                <div class="campo-doble">
+                    <div class="campo">
+                        <label for="edit-movil-modelo">Modelo</label>
+                        <input type="text" id="edit-movil-modelo" class="input-tabla">
+                    </div>
+                    <div class="campo">
+                        <label for="edit-movil-patente">Patente</label>
+                        <input type="text" id="edit-movil-patente" class="input-tabla">
+                    </div>
+                </div>
+            </div>
+
+            <div class="modal-botones">
+                <button id="btn-confirmar-mod-movil" class="btn-borrar" style="background-color: var(--AzulMedio);">Guardar Cambios</button>
+                <button id="btn-cancelar-mod-movil" class="btn-borrar">Cancelar</button>
             </div>
         </div>
     </div>
