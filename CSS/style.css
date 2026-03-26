@@ -36,7 +36,8 @@ body{
 }
 
 .DatosChoferes,
-.Horarios {
+.Horarios,
+.salir {
     display: inline-block;
     width: 250px;
     text-align: center;
@@ -49,11 +50,16 @@ body{
     padding: 2rem;
     border: 2px solid black;
     transition: background-color 0.3s ease;
+}
+
+.DatosChoferes,
+.Horarios {
     margin: 3rem;
 }
 
 .DatosChoferes:hover,
-.Horarios:hover {
+.Horarios:hover,
+.salir:hover {
     text-decoration: none;
     background-color: hwb(184 54% 29%);
 }
@@ -68,4 +74,139 @@ body{
 
 .logo--header{
     display: flex;
+    justify-content: space-between;
+    align-items: center; /* Alinea verticalmente el logo y el botón */
+    padding: 2rem 5%;    /* Da espacio arriba/abajo y a los lados */
+}
+
+.salir {
+    margin: 0; /* Eliminamos el margen excesivo ya que el header tiene padding */
+}
+
+
+/* Choferes.html */
+
+/* Listado de Choferes */
+.contenedor-lista {
+    max-width: 1000px;
+    margin: 2rem auto;
+    padding: 0 2rem;
+}
+
+.tabla-choferes {
+    background-color: var(--Blanco);
+    border-radius: 10px;
+    padding: 1rem;
+    box-shadow: 0px 4px 10px rgba(0,0,0,0.1);
+}
+
+.fila {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 1rem 0;
+    border-bottom: 1px solid #eee;
+    gap: 1rem;
+}
+
+.fila-header {
+    font-weight: bold;
+    border-bottom: 2px solid var(--AzulMedio);
+    color: var(--AzulOscuro);
+    text-align: center;
+}
+
+.fila-header p {
+    margin: 0;
+    flex: 1;
+}
+
+.input-tabla, .input-time {
+    padding: 0.5rem;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    width: 100%; /* Asegura que el buscador ocupe el espacio de la columna */
+}
+
+.columna-movil, .columna-nombre, .columna-activo, .columna-horario, .columna-acciones {
+    flex: 1;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.btn-borrar {
+    background-color: #ff4d4d;
+    color: white;
+    border: none;
+    padding: 0.5rem 1rem;
+    border-radius: 5px;
+    cursor: pointer;
+    font-weight: bold;
+}
+
+.btn-borrar:hover {
+    background-color: #cc0000;
+}
+
+/* Estilos para la Ventana Flotante (Modal) */
+.modal-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.5); /* Fondo oscuro semitransparente */
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 1000;
+}
+
+.modal-contenido {
+    background-color: var(--Blanco);
+    padding: 3rem;
+    border-radius: 10px;
+    width: 500px; /* Un poco más ancho para el formulario */
+    text-align: center;
+    box-shadow: 0px 5px 15px rgba(0,0,0,0.3);
+}
+
+.modal-botones {
+    display: flex;
+    justify-content: space-around;
+    margin-top: 2rem;
+}
+
+.oculto {
+    display: none !important;
+}
+
+.modal-contenido h2 {
+    font-size: 2.2rem;
+    margin-bottom: 2rem;
+    color: var(--AzulOscuro);
+}
+
+.campo {
+    text-align: left;
+    margin-bottom: 1.5rem;
+}
+
+.campo label {
+    display: block;
+    font-size: 1.4rem;
+    font-weight: bold;
+    margin-bottom: 0.5rem;
+    color: #555;
+}
+
+.campo-doble {
+    display: flex;
+    gap: 1rem;
+}
+
+.campo-doble .campo {
+    flex: 1;
 }

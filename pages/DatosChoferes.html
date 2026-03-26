@@ -5,8 +5,9 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <link rel="stylesheet" href="../CSS/style.css">
     <link rel="preload" href="../CSS/style.css" as="style">
-    <link rel="stylesheet" href="CSS/normalize.css">
-    <link rel="preload" href="CSS/normalize.css" as="style">
+    <link rel="stylesheet" href="../CSS/normalize.css">
+    <link rel="preload" href="../CSS/normalize.css" as="style">
+    <script src="../js/app.js" defer></script>
     <title>Datos de choferes</title>
 </head>
 <body class="body--duo">
@@ -15,11 +16,124 @@
             <img src="../assets/logo el limite 100x100 gris.png">
         </div>
         <div>
-            <a href="../index.html">Pagina de inicio</a>
+            <a class="salir" href="../index.html">Pagina de inicio</a>
         </div>
     </header>
-    <main>
+    <nav class="botones--index">
+        <button id="btn-agregar-chofer" class="DatosChoferes">Agregar chofer</button>
+        <button id="btn-agregar-movil" class="Horarios">Agregar móvil</button>
+    </nav>
 
+    <main class="contenedor-lista">
+        <section class="tabla-choferes" id="lista-cuerpo">
+            <!-- Cabecera de la tabla -->
+            <div class="fila fila-header">
+                <p>Móvil</p>
+                <p>Nombre Chofer</p>
+                <p>Activo</p>
+                <p>Horario (Desde - Hasta)</p>
+                <p>Acciones</p>
+            </div>
+
+            <!-- Fila de ejemplo -->
+            <div class="fila">
+                <div class="columna-movil">
+                    <input type="text" class="input-tabla" list="lista-moviles" placeholder="Buscar móvil...">
+                </div>
+                <div class="columna-nombre">
+                    <input type="text" class="input-tabla" list="lista-choferes" placeholder="Buscar chofer...">
+                </div>
+                <div class="columna-activo">
+                    <input type="checkbox" checked>
+                </div>
+                <div class="columna-horario">
+                    <input type="time" class="input-time">
+                    <span>a</span>
+                    <input type="time" class="input-time">
+                </div>
+                <div class="columna-acciones">
+                    <button class="btn-borrar">Borrar</button>
+                </div>
+            </div>
+        </section>
+
+        <!-- Listas desplegables para búsqueda (Datalists) -->
+        <!-- Aquí se cargarán los datos que agregues con los botones superiores -->
+        <datalist id="lista-moviles">
+            <option value="001">
+            <option value="002">
+            <option value="003">
+        </datalist>
+
+        <datalist id="lista-choferes">
+            <option value="Juan Pérez">
+            <option value="Ricardo Gómez">
+            <option value="Alberto Fernández">
+        </datalist>
     </main>
+
+    <!-- Ventana Flotante (Modal) -->
+    <div id="modal-contenedor" class="modal-overlay oculto">
+        <div class="modal-contenido">
+            <h2 id="modal-titulo">Agregar Nuevo</h2>
+            
+            <!-- Formulario para Chofer -->
+            <div id="form-chofer" class="form-container oculto">
+                <div class="campo">
+                    <label for="chofer-nombre">Nombre y Apellido</label>
+                    <input type="text" id="chofer-nombre" class="input-tabla" placeholder="Ej: Juan Pérez">
+                </div>
+                <div class="campo">
+                    <label for="chofer-direccion">Dirección</label>
+                    <input type="text" id="chofer-direccion" class="input-tabla" placeholder="Calle 123">
+                </div>
+                <div class="campo">
+                    <label for="chofer-telefono">Teléfono</label>
+                    <input type="tel" id="chofer-telefono" class="input-tabla" placeholder="11 2233-4455">
+                </div>
+                <div class="campo">
+                    <label for="chofer-dni">DNI</label>
+                    <input type="number" id="chofer-dni" class="input-tabla" placeholder="Solo números">
+                </div>
+                <div class="campo-doble">
+                    <div class="campo">
+                        <label>Licencia (Desde)</label>
+                        <input type="date" id="chofer-licencia-desde" class="input-tabla">
+                    </div>
+                    <div class="campo">
+                        <label>Licencia (Hasta)</label>
+                        <input type="date" id="chofer-licencia-hasta" class="input-tabla">
+                    </div>
+                </div>
+            </div>
+
+            <!-- Formulario para Móvil -->
+            <div id="form-movil" class="form-container oculto">
+                <div class="campo">
+                    <label for="movil-numero">Número de Móvil</label>
+                    <input type="number" id="movil-numero" class="input-tabla" placeholder="Ej: 101">
+                </div>
+                <div class="campo">
+                    <label for="movil-marca">Marca</label>
+                    <input type="text" id="movil-marca" class="input-tabla" placeholder="Ej: Toyota">
+                </div>
+                <div class="campo-doble">
+                    <div class="campo">
+                        <label for="movil-modelo">Modelo</label>
+                        <input type="text" id="movil-modelo" class="input-tabla" placeholder="Ej: Corolla">
+                    </div>
+                    <div class="campo">
+                        <label for="movil-patente">Patente</label>
+                        <input type="text" id="movil-patente" class="input-tabla" placeholder="ABC-123">
+                    </div>
+                </div>
+            </div>
+
+            <div class="modal-botones">
+                <button id="btn-modal-confirmar" class="btn-borrar" style="background-color: var(--AzulMedio);">Confirmar</button>
+                <button id="btn-modal-cancelar" class="btn-borrar">Cancelar</button>
+            </div>
+        </div>
+    </div>
 </body>
 </html>
