@@ -128,12 +128,16 @@ body{
     width: 100%; /* Asegura que el buscador ocupe el espacio de la columna */
 }
 
-.columna-movil, .columna-nombre, .columna-activo, .columna-horario, .columna-acciones {
+.columna-movil, .columna-nombre, .columna-activo, .columna-horario, .columna-acciones, .columna-entrada, .columna-salida, .columna-hora, .columna-check {
     flex: 1;
     display: flex;
     justify-content: center;
     align-items: center;
     gap: 0.5rem;
+}
+
+.columna-check {
+    max-width: 50px; /* Columna angosta para el checkbox */
 }
 
 .btn-borrar {
@@ -148,6 +152,38 @@ body{
 
 .btn-borrar:hover {
     background-color: #cc0000;
+}
+
+/* Botones específicos de Horarios */
+.btn-entrada {
+    background-color: #28a745;
+    color: white;
+    border: none;
+    padding: 0.8rem 1.5rem;
+    border-radius: 5px;
+    cursor: pointer;
+    font-weight: bold;
+    width: 90%;
+}
+
+.btn-salida {
+    background-color: #fd7e14;
+    color: white;
+    border: none;
+    padding: 0.8rem 1.5rem;
+    border-radius: 5px;
+    cursor: pointer;
+    font-weight: bold;
+    width: 90%;
+}
+
+.btn-entrada:hover { background-color: #218838; }
+.btn-salida:hover { background-color: #e36c09; }
+
+.texto-movil {
+    font-size: 1.8rem;
+    font-weight: bold;
+    margin: 0;
 }
 
 /* Estilos para la Ventana Flotante (Modal) */
@@ -209,4 +245,12 @@ body{
 
 .campo-doble .campo {
     flex: 1;
+}
+
+.buscador-fecha {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    font-size: 1.6rem;
+    font-weight: bold;
 }

@@ -7,6 +7,7 @@
     <link rel="preload" href="../CSS/style.css" as="style">
     <link rel="stylesheet" href="../CSS/normalize.css">
     <link rel="preload" href="../CSS/normalize.css" as="style">
+    <script src="../js/app.js" defer></script>
     <title>Horarios</title>
 </head>
 <body class="body--duo">
@@ -18,5 +19,48 @@
             <a class="salir" href="../index.html">Pagina de inicio</a>
         </div>
     </header>
+
+    <nav class="botones--index">
+        <div class="buscador-fecha">
+            <label for="buscar-fecha">Consultar Día:</label>
+            <input type="date" id="buscar-fecha" class="input-tabla">
+        </div>
+        <button id="btn-exportar-horarios" class="Horarios" style="background-color: #28a745; color: white; border-color: #1e7e34;">Exportar Horarios</button>
+    </nav>
+
+    <main class="contenedor-lista">
+        <section class="tabla-choferes" id="tabla-horarios-body">
+            <!-- Cabecera de la tabla de horarios -->
+            <div class="fila fila-header">
+                <div class="columna-check"><input type="checkbox" id="select-all"></div>
+                <p>Móviles</p>
+                <p>Entrada</p>
+                <p>Horario Entrada</p>
+                <p>Salida</p>
+                <p>Horario Salida</p>
+            </div>
+
+            <!-- Las filas se generarán automáticamente desde app.js -->
+        </section>
+    </main>
+
+    <!-- Modal para Exportar Horarios por Rango -->
+    <div id="modal-exportar" class="modal-overlay oculto">
+        <div class="modal-contenido">
+            <h2>Exportar Reporte de Horarios</h2>
+            <div class="campo">
+                <label for="exportar-desde">Desde Fecha:</label>
+                <input type="date" id="exportar-desde" class="input-tabla">
+            </div>
+            <div class="campo">
+                <label for="exportar-hasta">Hasta Fecha:</label>
+                <input type="date" id="exportar-hasta" class="input-tabla">
+            </div>
+            <div class="modal-botones">
+                <button id="btn-confirmar-exportar" class="btn-borrar" style="background-color: var(--AzulMedio);">Exportar</button>
+                <button id="btn-cancelar-exportar" class="btn-borrar">Cancelar</button>
+            </div>
+        </div>
+    </div>
 </body>
 </html>
