@@ -26,5 +26,6 @@ CREATE TABLE IF NOT EXISTS horarios (
     fecha DATE,
     entrada TIME,
     salida TIME,
+    activo TINYINT(1) DEFAULT 0,
     UNIQUE KEY chofer_fecha (chofer_nombre, fecha)
 );

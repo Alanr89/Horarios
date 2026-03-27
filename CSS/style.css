@@ -107,6 +107,11 @@ body{
     padding: 1rem 0;
     border-bottom: 1px solid #eee;
     gap: 1rem;
+    transition: background-color 0.2s;
+}
+
+.fila:hover {
+    background-color: #f9f9f9;
 }
 
 .fila-header {
@@ -124,6 +129,13 @@ body{
     padding-left: 1.5rem;
 }
 
+.titulo-planilla {
+    text-align: center;
+    color: var(--AzulOscuro);
+    font-size: 2.8rem;
+    margin-bottom: 2rem;
+}
+
 .seccion-tabla {
     margin-bottom: 4rem;
 }
@@ -135,9 +147,61 @@ body{
 
 .input-tabla, .input-time {
     padding: 0.5rem;
+    padding-right: 2.5rem; /* Espacio para el triángulo */
     border: 1px solid #ccc;
     border-radius: 4px;
     width: 100%; /* Asegura que el buscador ocupe el espacio de la columna */
+    font-family: inherit;
+    font-size: 1.4rem;
+    background-color: #fff;
+    outline: none;
+    transition: border-color 0.3s;
+    cursor: text;
+}
+
+/* Forzar que el triángulo del datalist sea siempre visible y actúe como botón */
+input::-webkit-calendar-picker-indicator {
+    display: block !important;
+    opacity: 1 !important;
+    cursor: pointer;
+    position: absolute;
+    right: 8px;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 18px;
+    height: 18px;
+    z-index: 5;
+}
+
+/* Ocultar flechas (spinners) en inputs de tipo número */
+/* Chrome, Safari, Edge, Opera */
+input::-webkit-outer-spin-button,
+input::-webkit-inner-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+/* Firefox */
+input[type=number] {
+  -moz-appearance: textfield;
+}
+
+/* Ocultar el ícono del reloj en campos de hora para evitar desplazamientos */
+input[type="time"]::-webkit-calendar-picker-indicator {
+    display: none !important;
+}
+
+/* Contenedor relativo para el input y su indicador */
+.columna-nombre, .columna-movil {
+    position: relative;
+}
+
+select.input-tabla {
+    cursor: pointer;
+}
+
+.input-tabla:focus {
+    border-color: var(--AzulMedio);
+    box-shadow: 0 0 5px rgba(102, 153, 201, 0.3);
 }
 
 .columna-movil, .columna-nombre, .columna-activo, .columna-horario, .columna-acciones, .columna-entrada, .columna-salida, .columna-hora, .columna-check {
@@ -173,12 +237,26 @@ body{
     margin-right: 0.5rem;
 }
 
+.btn-guardar {
+    background-color: #28a745;
+    color: white;
+    border: none;
+    padding: 0.5rem 1rem;
+    border-radius: 5px;
+    cursor: pointer;
+    font-weight: bold;
+}
+
 .btn-editar:hover {
     background-color: #e0a800;
 }
 
 .btn-borrar:hover {
     background-color: #cc0000;
+}
+
+.btn-guardar:hover {
+    background-color: #218838;
 }
 
 /* Botones específicos de Horarios */

@@ -21,6 +21,7 @@
     </header>
     <nav class="botones--index">
         <button id="btn-agregar-chofer" class="DatosChoferes">Agregar chofer</button>
+        <button id="btn-modificar-chofer" class="Horarios">Modificar chofer</button>
         <button id="btn-agregar-movil" class="Horarios">Agregar móvil</button>
         <button id="btn-modificar-movil" class="Horarios">Modificar móvil</button>
         <button id="btn-exportar" class="Horarios" style="background-color: #28a745; color: white; border-color: #1e7e34;">Exportar información</button>
@@ -29,20 +30,14 @@
     <main class="contenedor-lista">
         <!-- Las tablas de Choferes y Móviles se generarán aquí desde app.js -->
         <div id="lista-cuerpo"></div>
+        
+        <div style="text-align: center; margin-top: 1rem;">
+            <button id="btn-nueva-fila" class="btn-entrada" style="width: auto; padding: 1rem 3rem; font-size: 2rem;">+ Agregar Fila</button>
+        </div>
 
         <!-- Listas desplegables para búsqueda (Datalists) -->
-        <!-- Aquí se cargarán los datos que agregues con los botones superiores -->
-        <datalist id="lista-moviles">
-            <option value="001">
-            <option value="002">
-            <option value="003">
-        </datalist>
-
-        <datalist id="lista-choferes">
-            <option value="Juan Pérez">
-            <option value="Ricardo Gómez">
-            <option value="Alberto Fernández">
-        </datalist>
+        <datalist id="lista-moviles-datalist"></datalist>
+        <datalist id="lista-choferes-datalist"></datalist>
     </main>
 
     <!-- Ventana Flotante (Modal) -->
@@ -61,8 +56,11 @@
                     <input type="text" id="chofer-direccion" class="input-tabla" placeholder="Calle 123">
                 </div>
                 <div class="campo">
-                    <label for="chofer-telefono">Teléfono</label>
-                    <input type="tel" id="chofer-telefono" class="input-tabla" placeholder="11 2233-4455">
+                    <label>Teléfono</label>
+                    <div class="campo-doble">
+                        <input type="number" id="chofer-cod-area" class="input-tabla" placeholder="Cód. área" oninput="if(this.value.length > 3) this.value = this.value.slice(0, 3);">
+                        <input type="number" id="chofer-nro-tel" class="input-tabla" placeholder="Nro" oninput="if(this.value.length > 8) this.value = this.value.slice(0, 8);">
+                    </div>
                 </div>
                 <div class="campo">
                     <label for="chofer-dni">DNI</label>
@@ -115,7 +113,9 @@
             <h2>Modificar Datos del Móvil</h2>
             <div class="campo">
                 <label for="buscar-movil-edit">Seleccionar Móvil (Número):</label>
-                <input type="text" id="buscar-movil-edit" class="input-tabla" list="lista-moviles" placeholder="Escriba el número...">
+                <select id="buscar-movil-edit" class="input-tabla">
+                    <option value="">-- Seleccione un móvil --</option>
+                </select>
             </div>
             
             <div id="form-modificar-movil-campos" class="oculto">
@@ -143,6 +143,58 @@
             <div class="modal-botones">
                 <button id="btn-confirmar-mod-movil" class="btn-borrar" style="background-color: var(--AzulMedio);">Guardar Cambios</button>
                 <button id="btn-cancelar-mod-movil" class="btn-borrar">Cancelar</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal para Modificar Chofer -->
+    <div id="modal-modificar-chofer" class="modal-overlay oculto">
+        <div class="modal-contenido">
+            <h2>Modificar Datos del Chofer</h2>
+            <div class="campo">
+                <label for="select-chofer-edit">Seleccionar Chofer:</label>
+                <select id="select-chofer-edit" class="input-tabla">
+                    <option value="">-- Seleccione un chofer --</option>
+                </select>
+            </div>
+            
+            <div id="form-modificar-chofer-campos" class="oculto">
+                <hr>
+                <div class="campo">
+                    <label for="edit-chofer-nombre">Nombre y Apellido</label>
+                    <input type="text" id="edit-chofer-nombre" class="input-tabla">
+                </div>
+                <div class="campo">
+                    <label for="edit-chofer-direccion">Dirección</label>
+                    <input type="text" id="edit-chofer-direccion" class="input-tabla">
+                </div>
+                <div class="campo">
+                    <label>Teléfono</label>
+                    <div class="campo-doble">
+                        <input type="number" id="edit-chofer-cod-area" class="input-tabla" placeholder="Cód. área" oninput="if(this.value.length > 3) this.value = this.value.slice(0, 3);">
+                        <input type="number" id="edit-chofer-nro-tel" class="input-tabla" placeholder="Nro" oninput="if(this.value.length > 8) this.value = this.value.slice(0, 8);">
+                    </div>
+                </div>
+                <div class="campo">
+                    <label for="edit-chofer-dni">DNI</label>
+                    <input type="number" id="edit-chofer-dni" class="input-tabla">
+                </div>
+                <div class="campo-doble">
+                    <div class="campo">
+                        <label>Licencia (Desde)</label>
+                        <input type="date" id="edit-chofer-licencia-desde" class="input-tabla">
+                    </div>
+                    <div class="campo">
+                        <label>Licencia (Hasta)</label>
+                        <input type="date" id="edit-chofer-licencia-hasta" class="input-tabla">
+                    </div>
+                </div>
+            </div>
+
+            <div class="modal-botones" style="flex-wrap: wrap; gap: 10px;">
+                <button id="btn-confirmar-mod-chofer" class="btn-borrar" style="background-color: var(--AzulMedio); flex: 1;">Guardar Cambios</button>
+                <button id="btn-cancelar-mod-chofer" class="btn-borrar" style="flex: 1;">Cancelar</button>
+                <button id="btn-borrar-chofer-db" class="btn-borrar" style="width: 100%; margin-top: 10px;">Borrar Chofer</button>
             </div>
         </div>
     </div>

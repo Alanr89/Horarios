@@ -2,10 +2,10 @@
 header('Content-Type: application/json');
 include 'conexion.php';
 
-// Recibir los datos JSON enviados por el fetch de JavaScript
 $data = json_decode(file_get_contents('php://input'), true);
 
-if ($data) {
+if ($data && isset($data['id'])) {
+    $id = (int)$data['id'];
     $nombre = mysqli_real_escape_string($conexion, $data['nombre']);
     $direccion = mysqli_real_escape_string($conexion, $data['direccion']);
     $telefono = mysqli_real_escape_string($conexion, $data['telefono']);
@@ -13,8 +13,10 @@ if ($data) {
     $desde = $data['licenciaDesde'];
     $hasta = $data['licenciaHasta'];
 
-    $query = "INSERT INTO choferes (nombre, direccion, telefono, dni, licencia_desde, licencia_hasta) 
-              VALUES ('$nombre', '$direccion', '$telefono', '$dni', '$desde', '$hasta')";
+    $query = "UPDATE choferes SET 
+              nombre='$nombre', direccion='$direccion', telefono='$telefono', 
+              dni='$dni', licencia_desde='$desde', licencia_hasta='$hasta' 
+              WHERE id=$id";
 
     if (mysqli_query($conexion, $query)) {
         echo json_encode(['success' => true]);

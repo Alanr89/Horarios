@@ -1,8 +1,8 @@
 // Referencias a los botones y las listas
 const btnChofer = document.getElementById('btn-agregar-chofer');
 const btnMovil = document.getElementById('btn-agregar-movil');
-const listaChoferes = document.getElementById('lista-choferes');
-const listaMoviles = document.getElementById('lista-moviles');
+const listaChoferes = document.getElementById('lista-choferes-datalist');
+const listaMoviles = document.getElementById('lista-moviles-datalist');
 const btnExportar = document.getElementById('btn-exportar');
 const btnExportarHorarios = document.getElementById('btn-exportar-horarios');
 const buscadorFecha = document.getElementById('buscar-fecha');
@@ -12,6 +12,18 @@ const modal = document.getElementById('modal-contenedor');
 const modalTitulo = document.getElementById('modal-titulo');
 const btnConfirmar = document.getElementById('btn-modal-confirmar');
 const btnCancelar = document.getElementById('btn-modal-cancelar');
+
+const btnNuevaFila = document.getElementById('btn-nueva-fila');
+
+// Referencias al Modal de Modificar Chofer
+const btnModificarChofer = document.getElementById('btn-modificar-chofer');
+const modalModChofer = document.getElementById('modal-modificar-chofer');
+const selectChoferEdit = document.getElementById('select-chofer-edit');
+const formModChoferCampos = document.getElementById('form-modificar-chofer-campos');
+const btnConfirmarModChofer = document.getElementById('btn-confirmar-mod-chofer');
+const btnCancelarModChofer = document.getElementById('btn-cancelar-mod-chofer');
+const btnBorrarChoferDB = document.getElementById('btn-borrar-chofer-db');
+let choferIDSeleccionado = null;
 
 // Referencias al Modal de Modificar Móvil
 const btnModificarMovil = document.getElementById('btn-modificar-movil');
@@ -47,7 +59,7 @@ let editIndex = null; // Indice del elemento que se está editando
 
 // Función para cargar datos desde MySQL al iniciar
 function cargarDatosDesdeServidor() {
-    fetch('../php/obtener_datos.php')
+    fetch('../PHP/obtener_datos.php')
         .then(res => res.json())
         .then(data => {
             if (data) {
@@ -55,7 +67,7 @@ function cargarDatosDesdeServidor() {
                 movilesRegistrados = data.moviles || [];
                 horariosRegistrados = data.horarios || [];
                 actualizarLocalStorage();
-                
+                actualizarDatalists();
                 // Si estamos en la página de DatosChoferes, recargamos la tabla
                 if (listaCuerpo) cargarTablaChoferes();
                 // Si estamos en Horarios, recargamos los móviles
@@ -63,6 +75,26 @@ function cargarDatosDesdeServidor() {
             }
         })
         .catch(err => console.log("Usando datos locales (Servidor no disponible)"));
+}
+
+function actualizarDatalists() {
+    const dlChoferes = document.getElementById('lista-choferes-datalist');
+    const dlMoviles = document.getElementById('lista-moviles-datalist');
+    if(!dlChoferes || !dlMoviles) return;
+
+    // Actualizar Datalists (para búsqueda por concatenación en la planilla)
+    dlChoferes.innerHTML = choferesRegistrados.map(c => `<option value="${c.nombre}">${c.nombre}</option>`).join('');
+    dlMoviles.innerHTML = movilesRegistrados.map(m => `<option value="${m.numero}">${m.numero}</option>`).join('');
+
+    // Actualizar Selects de los modales (desplegables fijos)
+    if (selectChoferEdit) {
+        selectChoferEdit.innerHTML = '<option value="">-- Seleccione un chofer --</option>' + 
+            choferesRegistrados.map(c => `<option value="${c.id}">${c.nombre}</option>`).join('');
+    }
+    if (buscarMovilEdit) {
+        buscarMovilEdit.innerHTML = '<option value="">-- Seleccione un móvil --</option>' + 
+            movilesRegistrados.map(m => `<option value="${m.numero}">${m.numero}</option>`).join('');
+    }
 }
 
 // Llamar a la carga inicial
@@ -85,7 +117,8 @@ function abrirModal(titulo, listaDestino, tipo, index = null) {
         // Limpiar campos de chofer
         document.getElementById('chofer-nombre').value = "";
         document.getElementById('chofer-direccion').value = "";
-        document.getElementById('chofer-telefono').value = "";
+        document.getElementById('chofer-cod-area').value = "";
+        document.getElementById('chofer-nro-tel').value = "";
         document.getElementById('chofer-dni').value = "";
         document.getElementById('chofer-licencia-desde').value = "";
         document.getElementById('chofer-licencia-hasta').value = "";
@@ -123,9 +156,102 @@ if (btnModificarMovil) {
     });
 }
 
+// Lógica para Modificar Chofer
+if (btnModificarChofer) {
+    btnModificarChofer.addEventListener('click', () => {
+        actualizarDatalists();
+        formModChoferCampos.classList.add('oculto');
+        modalModChofer.classList.remove('oculto');
+    });
+}
+
+if (selectChoferEdit) {
+    selectChoferEdit.addEventListener('change', () => {
+        const id = selectChoferEdit.value;
+        const chofer = choferesRegistrados.find(c => c.id == id);
+        
+        if (chofer) {
+            choferIDSeleccionado = id;
+            formModChoferCampos.classList.remove('oculto');
+            
+            const telParts = (chofer.telefono || "").split(" "); // Asumimos espacio como separador
+            document.getElementById('edit-chofer-nombre').value = chofer.nombre;
+            document.getElementById('edit-chofer-direccion').value = chofer.direccion;
+            document.getElementById('edit-chofer-cod-area').value = telParts[0] || "";
+            document.getElementById('edit-chofer-nro-tel').value = telParts[1] || "";
+            document.getElementById('edit-chofer-dni').value = chofer.dni;
+            document.getElementById('edit-chofer-licencia-desde').value = chofer.licencia_desde || chofer.licenciaDesde || "";
+            document.getElementById('edit-chofer-licencia-hasta').value = chofer.licencia_hasta || chofer.licenciaHasta || "";
+        } else {
+            formModChoferCampos.classList.add('oculto');
+        }
+    });
+}
+
+if (btnCancelarModChofer) {
+    btnCancelarModChofer.addEventListener('click', () => modalModChofer.classList.add('oculto'));
+}
+
+if (btnConfirmarModChofer) {
+    btnConfirmarModChofer.addEventListener('click', () => {
+        const codArea = document.getElementById('edit-chofer-cod-area').value.trim();
+        const nroTel = document.getElementById('edit-chofer-nro-tel').value.trim();
+        
+        const datos = {
+            id: choferIDSeleccionado,
+            nombre: document.getElementById('edit-chofer-nombre').value.trim(),
+            direccion: document.getElementById('edit-chofer-direccion').value.trim(),
+            telefono: `${codArea} ${nroTel}`.trim(),
+            dni: document.getElementById('edit-chofer-dni').value.trim(),
+            licenciaDesde: document.getElementById('edit-chofer-licencia-desde').value,
+            licenciaHasta: document.getElementById('edit-chofer-licencia-hasta').value
+        };
+
+        fetch('../PHP/actualizar_chofer.php', {
+            method: 'POST',
+            body: JSON.stringify(datos),
+            headers: { 'Content-Type': 'application/json' }
+        })
+        .then(res => res.json())
+        .then(data => {
+            if(data.success) {
+                alert("Chofer actualizado correctamente.");
+                cargarDatosDesdeServidor();
+                modalModChofer.classList.add('oculto');
+            }
+        });
+    });
+}
+
+if (btnBorrarChoferDB) {
+    btnBorrarChoferDB.addEventListener('click', () => {
+        if (confirm("Usted desea borrar definitivamente")) {
+            fetch('../PHP/borrar_chofer.php', {
+                method: 'POST',
+                body: JSON.stringify({ id: choferIDSeleccionado }),
+                headers: { 'Content-Type': 'application/json' }
+            })
+            .then(res => res.json())
+            .then(data => {
+                if(data.success) {
+                    alert("Chofer eliminado.");
+                    cargarDatosDesdeServidor();
+                    modalModChofer.classList.add('oculto');
+                } else {
+                    alert("Error al eliminar: " + data.error);
+                }
+            })
+            .catch(error => {
+                console.error("Error:", error);
+                alert("Error de comunicación con el servidor.");
+            });
+        }
+    });
+}
+
 // Buscar datos del móvil al escribir en el modal de edición
 if (buscarMovilEdit) {
-    buscarMovilEdit.addEventListener('input', () => {
+    buscarMovilEdit.addEventListener('change', () => {
         const nro = buscarMovilEdit.value.trim();
         const movil = movilesRegistrados.find(m => m.numero === nro);
         
@@ -178,7 +304,10 @@ function cargarTablaHorarios() {
                 <p class="texto-movil" style="font-size: 1.4rem;">${chofer.nombre}</p>
             </div>
             <div class="columna-movil">
-                <input type="text" class="input-tabla input-movil-asignado" list="lista-moviles" value="${movilAsignado}" placeholder="Nro Móvil" ${entradaDisabled}>
+                <input type="text" class="input-tabla input-movil-asignado" list="lista-moviles-datalist" value="${movilAsignado}" 
+                       placeholder="Móvil" ${entradaDisabled} autocomplete="off"
+                       onfocus="if(this.showPicker) this.showPicker();" 
+                       onclick="if(this.showPicker) this.showPicker();">
             </div>
             <div class="columna-entrada">
                 <button class="btn-entrada" ${entradaDisabled} onclick="registrarEvento(this, 'entrada')">Entrada</button>
@@ -215,47 +344,122 @@ if (buscadorFecha) {
     cargarTablaHorarios();
 }
 
-// Función para crear una fila (ahora más flexible)
-function agregarFilaATabla(valorPrincipal, valorSecundario, tipo, index, contenedor) {
+// Función para agregar una fila de asignación manual
+function agregarFilaAsignacion(contenedor, datos = null) {
     const nuevaFila = document.createElement('div');
     nuevaFila.classList.add('fila');
-    nuevaFila.dataset.tipo = tipo;
-    nuevaFila.dataset.index = index;
     
-    if (tipo === 'chofer') {
-        nuevaFila.innerHTML = `
-            <div class="columna-nombre" style="flex: 1.5;">
-                <p class="texto-movil">${valorSecundario}</p>
-            </div>
-            <div class="columna-movil">
-                <input type="text" class="input-tabla" list="lista-moviles" value="${valorPrincipal}" placeholder="Asignar Móvil...">
-            </div>
-            <div class="columna-activo"><input type="checkbox" checked></div>
-            <div class="columna-horario">
-                <input type="time" class="input-time"> <span>a</span> <input type="time" class="input-time">
-            </div>
-            <div class="columna-acciones">
-                <button class="btn-editar">Editar</button>
-                <button class="btn-borrar">Borrar</button>
-            </div>
-        `;
-    } else {
-        nuevaFila.innerHTML = `
-            <div class="columna-movil">
-                <p class="texto-movil">Móvil ${valorPrincipal}</p>
-            </div>
-            <div class="columna-nombre" style="flex: 1.5;">
-                <input type="text" class="input-tabla" list="lista-choferes" value="${valorSecundario}" placeholder="Asignar Chofer...">
-            </div>
-            <div class="columna-activo"><input type="checkbox" checked></div>
-            <div class="columna-acciones">
-                <button class="btn-editar">Editar</button>
-                <button class="btn-borrar">Borrar</button>
-            </div>
-        `;
-    }
-    
+    // Si vienen datos de la DB, los usamos, si no, vacío
+    if (datos && datos.id) nuevaFila.dataset.id = datos.id;
+    const chofer = datos ? datos.chofer : '';
+    const movil = datos ? datos.movil : '';
+    const entrada = (datos && datos.entrada && datos.entrada !== '--:--') ? datos.entrada : '';
+    const salida = (datos && datos.salida && datos.salida !== '--:--') ? datos.salida : '';
+    const activoChecked = (datos && datos.activo == 1) ? 'checked' : '';
+
+    nuevaFila.innerHTML = `
+        <div class="columna-nombre" style="flex: 1.5;">
+            <input type="text" class="input-tabla input-p-chofer" list="lista-choferes-datalist" value="${chofer}" 
+                   placeholder="Seleccionar Chofer..." autocomplete="off" 
+                   onfocus="if(this.showPicker) this.showPicker();" 
+                   onclick="if(this.showPicker) this.showPicker();">
+        </div>
+        <div class="columna-movil">
+            <input type="text" class="input-tabla input-p-movil" list="lista-moviles-datalist" value="${movil}" 
+                   placeholder="Seleccionar Móvil..." autocomplete="off" 
+                   onfocus="if(this.showPicker) this.showPicker();" 
+                   onclick="if(this.showPicker) this.showPicker();">
+        </div>
+        <div class="columna-activo"><input type="checkbox" class="input-p-activo" ${activoChecked}></div>
+        <div class="columna-horario">
+            <input type="time" class="input-time input-p-entrada" value="${entrada}"> <span>a</span> 
+            <input type="time" class="input-time input-p-salida" value="${salida}">
+        </div>
+        <div class="columna-acciones">
+            <button class="btn-guardar">Guardar</button>
+            <button class="btn-borrar" onclick="eliminarFilaPlanilla(this)">Borrar</button>
+        </div>
+    `;
+
+    // Evento para el botón Guardar
+    nuevaFila.querySelector('.btn-guardar').addEventListener('click', () => guardarFilaPlanilla(nuevaFila));
+
     contenedor.appendChild(nuevaFila);
+}
+
+function eliminarFilaPlanilla(boton) {
+    const fila = boton.closest('.fila');
+    const id = fila.dataset.id;
+
+    if (confirm('¿Eliminar esta asignación permanentemente?')) {
+        if (id) {
+            fetch('../PHP/borrar_fila_planilla.php', {
+                method: 'POST',
+                body: JSON.stringify({ id: id }),
+                headers: { 'Content-Type': 'application/json' }
+            })
+            .then(res => res.json())
+            .then(data => {
+                if (data.success) {
+                    // Eliminar también del array local para que no reaparezca sin F5
+                    horariosRegistrados = horariosRegistrados.filter(h => h.id != id);
+                    actualizarLocalStorage();
+                    fila.remove();
+                    cargarTablaChoferes(); // Recargar para mantener el mínimo de 4 filas
+                }
+            })
+            .catch(err => alert("Error al conectar con el servidor para borrar"));
+        } else {
+            fila.remove();
+        }
+    }
+}
+
+function guardarFilaPlanilla(fila) {
+    const id = fila.dataset.id || null;
+    const chofer = fila.querySelector('.input-p-chofer').value.trim();
+    const movil = fila.querySelector('.input-p-movil').value.trim();
+    const entrada = fila.querySelector('.input-p-entrada').value;
+    const salida = fila.querySelector('.input-p-salida').value;
+    const activo = fila.querySelector('.input-p-activo').checked ? 1 : 0;
+    const fecha = new Date().toISOString().split('T')[0]; // Hoy
+
+    // Solo guardamos si hay un nombre de chofer para evitar conflictos en la DB
+    if (chofer === "") return;
+
+    fetch('../PHP/guardar_planilla.php', {
+        method: 'POST',
+        body: JSON.stringify({
+            id, chofer, movil, entrada, salida, fecha, activo
+        }),
+        headers: { 'Content-Type': 'application/json' }
+    })
+    .then(res => res.json())
+    .then(data => {
+        if (data.success && data.new_id) {
+            alert("Cambios guardados en la fila.");
+            fila.dataset.id = data.new_id;
+            const nuevoRegistro = { id: data.new_id, chofer, movil, entrada, salida, activo, fecha };
+            
+            // Buscamos si ya existe por ID para actualizarlo en la memoria local (F5 preventivo)
+            let index = horariosRegistrados.findIndex(h => h.id == data.new_id);
+            
+            if (index === -1) {
+                // Si no lo encuentra por ID, quizás es nuevo pero ya existe el chofer para hoy
+                index = horariosRegistrados.findIndex(h => h.chofer === chofer && h.fecha === fecha);
+            }
+
+            if (index !== -1) {
+                horariosRegistrados[index] = nuevoRegistro;
+            } else {
+                horariosRegistrados.push(nuevoRegistro);
+            }
+            actualizarLocalStorage();
+        } else if (!data.success) {
+            alert("Error al guardar: " + (data.error || "Datos duplicados para este chofer hoy."));
+        }
+    })
+    .catch(err => console.error("Error de conexión:", err));
 }
 
 // Delegación de eventos para la tabla de Choferes (Borrar y Editar)
@@ -286,12 +490,14 @@ function prepararEdicion(tipo, index) {
                tipo, index);
 
     if (tipo === 'chofer') {
+        const telParts = (datos.telefono || "").split(" "); 
         document.getElementById('chofer-nombre').value = datos.nombre;
         document.getElementById('chofer-direccion').value = datos.direccion;
-        document.getElementById('chofer-telefono').value = datos.telefono;
+        document.getElementById('chofer-cod-area').value = telParts[0] || "";
+        document.getElementById('chofer-nro-tel').value = telParts[1] || "";
         document.getElementById('chofer-dni').value = datos.dni;
-        document.getElementById('chofer-licencia-desde').value = datos.licenciaDesde;
-        document.getElementById('chofer-licencia-hasta').value = datos.licenciaHasta;
+        document.getElementById('chofer-licencia-desde').value = datos.licencia_desde || datos.licenciaDesde || "";
+        document.getElementById('chofer-licencia-hasta').value = datos.licencia_hasta || datos.licenciaHasta || "";
     } else {
         document.getElementById('movil-numero').value = datos.numero;
         document.getElementById('movil-marca').value = datos.marca;
@@ -327,7 +533,7 @@ function registrarEvento(boton, tipo) {
     }
 
     // Enviar al servidor para que todos lo vean
-    fetch('../php/guardar_horario.php', {
+    fetch('../PHP/guardar_horario.php', {
         method: 'POST',
         body: JSON.stringify({
             chofer: nombreChofer,
@@ -354,10 +560,13 @@ btnCancelar.addEventListener('click', cerrarModal);
 
 btnConfirmar.addEventListener('click', () => {
     if (tipoActual === 'chofer') {
+        const codArea = document.getElementById('chofer-cod-area').value.trim();
+        const nroTel = document.getElementById('chofer-nro-tel').value.trim();
+
         const datos = {
             nombre: document.getElementById('chofer-nombre').value.trim(),
             direccion: document.getElementById('chofer-direccion').value.trim(),
-            telefono: document.getElementById('chofer-telefono').value.trim(),
+            telefono: `${codArea} ${nroTel}`.trim(),
             dni: document.getElementById('chofer-dni').value.trim(),
             licenciaDesde: document.getElementById('chofer-licencia-desde').value,
             licenciaHasta: document.getElementById('chofer-licencia-hasta').value
@@ -374,7 +583,7 @@ btnConfirmar.addEventListener('click', () => {
             }
 
             // Enviar a PHP
-            fetch('../php/guardar_chofer.php', {
+            fetch('../PHP/guardar_chofer.php', {
                 method: 'POST',
                 body: JSON.stringify(datos),
                 headers: { 'Content-Type': 'application/json' }
@@ -384,10 +593,7 @@ btnConfirmar.addEventListener('click', () => {
                 if(data.success) {
                     choferesRegistrados.push(datos);
                     actualizarLocalStorage();
-                    const option = document.createElement('option');
-                    option.value = datos.nombre;
-                    listaChoferes.appendChild(option);
-                    cargarTablaChoferes();
+                    actualizarDatalists(); // Solo actualizamos las sugerencias
                     cerrarModal();
                 } else {
                     alert("Error del servidor: " + (data.error || "Desconocido"));
@@ -418,7 +624,7 @@ btnConfirmar.addEventListener('click', () => {
                 return;
             }
 
-            fetch('../php/guardar_movil.php', {
+            fetch('../PHP/guardar_movil.php', {
                 method: 'POST',
                 body: JSON.stringify(datos),
                 headers: { 'Content-Type': 'application/json' }
@@ -428,10 +634,7 @@ btnConfirmar.addEventListener('click', () => {
                 if(data.success) {
                     movilesRegistrados.push(datos);
                     actualizarLocalStorage();
-                    const option = document.createElement('option');
-                    option.value = datos.numero;
-                    listaMoviles.appendChild(option);
-                    cargarTablaChoferes();
+                    actualizarDatalists(); // Solo actualizamos las sugerencias
                     cerrarModal();
                 } else {
                     alert("Error del servidor: " + (data.error || "Desconocido"));
@@ -460,7 +663,7 @@ if (btnConfirmarModMovil) {
                 patente: document.getElementById('edit-movil-patente').value.trim()
             };
             actualizarLocalStorage();
-            if (listaCuerpo) cargarTablaChoferes();
+            actualizarDatalists();
             modalModMovil.classList.add('oculto');
             alert("Móvil actualizado correctamente.");
         }
@@ -476,40 +679,43 @@ function actualizarLocalStorage() {
 function cargarTablaChoferes() {
     if (!listaCuerpo) return;
     
-    // Creamos la estructura de dos secciones
+    // 1. Re-generar la estructura base
     listaCuerpo.innerHTML = `
         <div class="seccion-tabla">
-            <h2 class="titulo-seccion">Personal (Choferes)</h2>
+            <h2 class="titulo-planilla">Planilla de Choferes</h2>
             <div class="tabla-choferes">
                 <div class="fila fila-header">
-                    <p style="flex: 1.5;">Nombre Chofer</p>
-                    <p>Móvil Asignado</p>
+                    <p style="flex: 1.5;">Chofer</p>
+                    <p>Móvil</p>
                     <p>Activo</p>
                     <p>Horario</p>
                     <p>Acciones</p>
                 </div>
-                <div id="cuerpo-choferes"></div>
-            </div>
-        </div>
-        <div class="seccion-tabla">
-            <h2 class="titulo-seccion">Flota (Móviles)</h2>
-            <div class="tabla-choferes">
-                <div class="fila fila-header">
-                    <p>Número Móvil</p>
-                    <p style="flex: 1.5;">Chofer Asignado</p>
-                    <p>Activo</p>
-                    <p>Acciones</p>
-                </div>
-                <div id="cuerpo-moviles"></div>
+                <div id="cuerpo-planilla"></div>
             </div>
         </div>
     `;
 
-    const divChoferes = document.getElementById('cuerpo-choferes');
-    const divMoviles = document.getElementById('cuerpo-moviles');
+    const cuerpoPlanilla = document.getElementById('cuerpo-planilla');
+    
+    // 2. Cargar registros reales de la DB (Si hay 6, cargará 6)
+    horariosRegistrados.forEach(reg => agregarFilaAsignacion(cuerpoPlanilla, reg));
 
-    choferesRegistrados.forEach((c, i) => agregarFilaATabla("", c.nombre, 'chofer', i, divChoferes));
-    movilesRegistrados.forEach((m, i) => agregarFilaATabla(m.numero, "", 'movil', i, divMoviles));
+    // 3. Rellenar con filas vacías solo hasta alcanzar el mínimo de 4
+    const filasActuales = cuerpoPlanilla.children.length;
+    const minimoFilas = 4;
+    
+    for(let i = filasActuales; i < minimoFilas; i++) {
+        agregarFilaAsignacion(cuerpoPlanilla);
+    }
+}
+
+// Evento para el botón "+"
+if (btnNuevaFila) {
+    btnNuevaFila.addEventListener('click', () => {
+        const cuerpoPlanilla = document.getElementById('cuerpo-planilla');
+        if (cuerpoPlanilla) agregarFilaAsignacion(cuerpoPlanilla);
+    });
 }
 
 // Carga inicial de datos en la tabla de DatosChoferes
@@ -541,6 +747,26 @@ if (btnExportar) {
         movilesRegistrados.forEach(m => {
             csvContent += `${m.numero};${m.marca};${m.modelo};${m.patente}\n`;
         });
+
+        // Sección Planilla de Asignación Actual
+        const cuerpoPlanilla = document.getElementById('cuerpo-planilla');
+        if (cuerpoPlanilla) {
+            csvContent += "\n--- PLANILLA DE ASIGNACIÓN ACTUAL ---\n";
+            csvContent += "Chofer;Móvil;Activo;Inicio;Fin\n";
+            const filas = cuerpoPlanilla.querySelectorAll('.fila');
+            filas.forEach(f => {
+                const chofer = f.querySelector('.input-p-chofer')?.value || "";
+                const movil = f.querySelector('.input-p-movil')?.value || "";
+                const activo = f.querySelector('.input-p-activo')?.checked ? "Si" : "No";
+                const inicio = f.querySelector('.input-p-entrada')?.value || "";
+                const fin = f.querySelector('.input-p-salida')?.value || "";
+                
+                // Solo exportar si la fila tiene al menos un chofer o un móvil asignado
+                if (chofer !== "" || movil !== "") {
+                    csvContent += `${chofer};${movil};${activo};${inicio};${fin}\n`;
+                }
+            });
+        }
 
         // Crear el archivo y descargarlo
         const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });

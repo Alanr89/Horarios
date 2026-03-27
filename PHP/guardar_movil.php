@@ -1,4 +1,5 @@
 <?php
+header('Content-Type: application/json');
 include 'conexion.php';
 
 $data = json_decode(file_get_contents('php://input'), true);
@@ -17,5 +18,7 @@ if ($data) {
     } else {
         echo json_encode(['success' => false, 'error' => mysqli_error($conexion)]);
     }
+} else {
+    echo json_encode(['success' => false, 'error' => 'No hay datos']);
 }
 ?>
