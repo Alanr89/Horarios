@@ -5,21 +5,18 @@ include 'conexion.php';
 $data = json_decode(file_get_contents('php://input'), true);
 
 if ($data) {
-    $id = isset($data['id']) ? (int)$data['id'] : null;
     $chofer = mysqli_real_escape_string($conexion, $data['chofer']);
     $movil = mysqli_real_escape_string($conexion, $data['movil']);
     $fecha = mysqli_real_escape_string($conexion, $data['fecha']);
-    $entrada = mysqli_real_escape_string($conexion, $data['entrada']);
-    $salida = mysqli_real_escape_string($conexion, $data['salida']);
+    $hora = mysqli_real_escape_string($conexion, $data['hora']);
+    $tipo = $data['tipo']; // 'entrada' o 'salida'
 
-    if ($id) {
-        // Si el registro ya existe, lo actualizamos (ej: para cerrar el turno)
-        $query = "UPDATE horarios SET entrada = '$entrada', salida = '$salida', movil_numero = '$movil' WHERE id = $id";
-    } else {
-        // Si es un turno nuevo (o el primero del día), lo insertamos
-        $query = "INSERT INTO horarios (chofer_nombre, movil_numero, fecha, entrada, salida) 
-                  VALUES ('$chofer', '$movil', '$fecha', '$entrada', '$salida')";
-    }
+    $columna = ($tipo === 'entrada') ? 'entrada' : 'salida';
+
+    // Intentar actualizar si ya existe el registro para ese chofer y fecha, sino insertar
+    $query = "INSERT INTO horarios (chofer_nombre, movil_numero, fecha, $columna) 
+              VALUES ('$chofer', '$movil', '$fecha', '$hora')
+              ON DUPLICATE KEY UPDATE $columna = '$hora', movil_numero = '$movil'";
 
     if (mysqli_query($conexion, $query)) {
         echo json_encode(['success' => true]);
