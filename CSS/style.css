@@ -88,7 +88,7 @@ body{
 
 /* Listado de Choferes */
 .contenedor-lista {
-    max-width: 1300px; /* Aumentamos el ancho para acomodar los timestamps */
+    max-width: 1550px; /* Ensanchamos el sector para que las columnas no se desplacen */
     margin: 2rem auto;
     padding: 0 2rem;
 }
@@ -210,19 +210,21 @@ select.input-tabla {
 
 .columna-movil, .columna-nombre, .columna-activo, .columna-horario, .columna-acciones, 
 .columna-entrada, .columna-salida, .columna-hora, .columna-check, .fila-header p {
-    flex: 2; /* Más ancho para dd/mm/aaaa HH:mm:ss */
-    min-width: 185px;
     display: flex;
     justify-content: center;
     align-items: center;
     gap: 0.5rem;
     margin: 0;
     text-align: center;
+    flex: 1; /* Valor base */
 }
 
-.columna-check {
-    max-width: 50px; /* Columna angosta para el checkbox */
-}
+.columna-check { flex: 0 0 50px; min-width: 50px; max-width: 50px; }
+.columna-nombre { flex: 2; min-width: 160px; }
+.columna-movil { flex: 1.5; min-width: 130px; }
+.columna-entrada, .columna-salida { flex: 1.2; min-width: 110px; }
+.columna-hora { flex: 2.8; min-width: 230px; } /* Espacio vital para el formato dd/mm/aaaa HH:mm:ss */
+.columna-acciones { flex: 1.5; min-width: 140px; }
 
 .btn-borrar {
     background-color: #ff4d4d;
