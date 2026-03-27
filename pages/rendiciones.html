@@ -1,0 +1,110 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="../CSS/style.css">
+    <link rel="preload" href="../CSS/style.css" as="style">
+    <link rel="stylesheet" href="../CSS/normalize.css">
+    <link rel="preload" href="../CSS/normalize.css" as="style">
+    <script src="../js/app.js" defer></script>
+    <title>Rendiciones</title>
+</head>
+<body class="body--duo">
+    <header class="logo--header">
+        <div>
+            <img src="../assets/logo el limite 100x100 gris.png">
+        </div>
+        <div>
+            <a class="salir" href="../index.html">Pagina de inicio</a>
+        </div>
+    </header>
+
+    <nav class="botones--index" style="justify-content: space-around; width: 100%; max-width: 1200px; margin: 0 auto;">
+        <div class="buscador-fecha" style="width: auto; background: white; padding: 0.5rem 1.5rem; border-radius: 8px; border: 1px solid #ccc;">
+            <label for="fecha-rendicion">Consultar Día:</label>
+            <input type="date" id="fecha-rendicion" class="input-tabla" style="width: 150px; border: none; font-size: 1.6rem;">
+        </div>
+        <button id="btn-nueva-rendicion" class="Horarios" style="margin: 0;">Nueva rendición</button>
+    </nav>
+
+    <main class="contenedor-lista">
+        <section class="tabla-choferes">
+            <div class="fila fila-header">
+                <p class="columna-fecha">Fecha</p>
+                <p class="columna-nombre">Chofer / Base</p>
+                <p class="columna-motivo">Motivo</p>
+                <p class="columna-patente">Patente / Nro Caso</p>
+                <p class="columna-tipo">Tipo</p>
+                <p class="columna-operador">Operador</p>
+                <p class="columna-acciones">Acción</p>
+            </div>
+            <div id="cuerpo-rendiciones"></div>
+        </section>
+    </main>
+
+    <!-- Modal para Nueva Rendición -->
+    <div id="modal-rendicion" class="modal-overlay oculto">
+        <div class="modal-contenido">
+            <h2 id="modal-rendicion-titulo">Nueva Rendición</h2>
+            <form id="form-rendicion-real">
+                <div class="campo">
+                    <label for="rendicion-fecha">Fecha</label>
+                    <input type="date" id="rendicion-fecha" class="input-tabla" readonly>
+                </div>
+
+                <div class="campo">
+                    <label>Origen</label>
+                    <div class="campo-doble">
+                        <label style="font-weight: normal;"><input type="checkbox" id="rendicion-check-base"> Base</label>
+                        <label style="font-weight: normal;"><input type="checkbox" id="rendicion-check-chofer"> Chofer</label>
+                    </div>
+                </div>
+
+                <div id="contenedor-chofer-rendicion" class="campo oculto">
+                    <label for="rendicion-chofer-nombre">Nombre del Chofer</label>
+                    <input type="text" id="rendicion-chofer-nombre" class="input-tabla" list="lista-choferes-datalist" placeholder="Escriba para buscar...">
+                </div>
+
+                <div class="campo">
+                    <label for="rendicion-motivo">Motivo</label>
+                    <input type="text" id="rendicion-motivo" class="input-tabla" maxlength="255" placeholder="Máx 255 caracteres">
+                </div>
+
+                <div class="campo">
+                    <label for="rendicion-patente">Patente / Nro de Caso</label>
+                    <input type="text" id="rendicion-patente" class="input-tabla" maxlength="20" placeholder="Máx 20 caracteres">
+                </div>
+
+                <div class="campo">
+                    <label>Tipo</label>
+                    <div class="campo-doble">
+                        <label style="font-weight: normal;"><input type="checkbox" id="rendicion-tipo-entrada"> Entrada</label>
+                        <label style="font-weight: normal;"><input type="checkbox" id="rendicion-tipo-salida"> Salida</label>
+                    </div>
+                </div>
+
+                <div class="campo">
+                    <label for="rendicion-operador">Operador</label>
+                    <input type="text" id="rendicion-operador" class="input-tabla" maxlength="50" placeholder="Máx 50 caracteres">
+                </div>
+
+                <div class="campo">
+                    <label>Marcar</label>
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.5rem; font-size: 1.3rem;">
+                        <label style="font-weight: normal;"><input type="checkbox" id="rendicion-marca-adelanto"> Adelanto</label>
+                        <label style="font-weight: normal;"><input type="checkbox" id="rendicion-marca-retiro"> Retiro</label>
+                        <label style="font-weight: normal;"><input type="checkbox" id="rendicion-marca-gastos"> Gastos</label>
+                        <label style="font-weight: normal;"><input type="checkbox" id="rendicion-marca-rindio"> Rindió</label>
+                    </div>
+                </div>
+            </form>
+
+            <div class="modal-botones" style="flex-wrap: wrap; gap: 10px;">
+                <button id="btn-guardar-rendicion" class="btn-guardar" style="flex: 1;">Guardar</button>
+                <button id="btn-cancelar-rendicion" class="btn-borrar" style="flex: 1;">Cancelar</button>
+            </div>
+        </div>
+    </div>
+</body>
+</html>
