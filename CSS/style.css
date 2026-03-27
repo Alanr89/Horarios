@@ -209,7 +209,8 @@ select.input-tabla {
 }
 
 .columna-movil, .columna-nombre, .columna-activo, .columna-horario, .columna-acciones, 
-.columna-entrada, .columna-salida, .columna-hora, .columna-check, .fila-header p {
+.columna-entrada, .columna-salida, .columna-hora, .columna-check, .fila-header p,
+.columna-fecha, .columna-motivo, .columna-patente, .columna-tipo, .columna-operador {
     display: flex;
     justify-content: center;
     align-items: center;
@@ -225,6 +226,13 @@ select.input-tabla {
 .columna-entrada, .columna-salida { flex: 1.2; min-width: 110px; }
 .columna-hora { flex: 2.8; min-width: 230px; } /* Espacio vital para el formato dd/mm/aaaa HH:mm:ss */
 .columna-acciones { flex: 1.5; min-width: 140px; }
+
+/* Columnas específicas de Rendiciones */
+.columna-fecha { flex: 1; min-width: 100px; }
+.columna-motivo { flex: 2; min-width: 180px; }
+.columna-patente { flex: 1.5; min-width: 140px; }
+.columna-tipo { flex: 1; min-width: 100px; }
+.columna-operador { flex: 1.5; min-width: 140px; }
 
 .btn-borrar {
     background-color: #ff4d4d;

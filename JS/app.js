@@ -734,6 +734,7 @@ function actualizarLocalStorage() {
     localStorage.setItem('choferes', JSON.stringify(choferesRegistrados));
     localStorage.setItem('moviles', JSON.stringify(movilesRegistrados));
     localStorage.setItem('horarios', JSON.stringify(horariosRegistrados));
+    localStorage.setItem('rendiciones', JSON.stringify(rendicionesRegistradas));
 }
 
 function cargarTablaChoferes() {

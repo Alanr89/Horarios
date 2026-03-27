@@ -12,11 +12,11 @@ if ($data) {
     $entrada = mysqli_real_escape_string($conexion, $data['entrada']);
     $salida = mysqli_real_escape_string($conexion, $data['salida']);
 
-    if ($id) {
-        // Si el registro ya existe, lo actualizamos (ej: para cerrar el turno)
-        $query = "UPDATE horarios SET entrada = '$entrada', salida = '$salida', movil_numero = '$movil' WHERE id = $id";
+    // Si recibimos un ID, es una actualización (ej: cerrar un turno nocturno abierto ayer)
+    // Si no, es un turno nuevo que se está guardando completo
+    if ($id && $id !== 'null') {
+        $query = "UPDATE horarios SET entrada = '$entrada', salida = '$salida', movil_numero = '$movil', fecha = '$fecha' WHERE id = $id";
     } else {
-        // Si es un turno nuevo (o el primero del día), lo insertamos
         $query = "INSERT INTO horarios (chofer_nombre, movil_numero, fecha, entrada, salida) 
                   VALUES ('$chofer', '$movil', '$fecha', '$entrada', '$salida')";
     }
