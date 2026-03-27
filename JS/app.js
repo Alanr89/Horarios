@@ -215,35 +215,47 @@ if (buscadorFecha) {
     cargarTablaHorarios();
 }
 
-// Función para crear una nueva fila en la tabla
-function agregarFilaATabla(movil, nombre, tipo, index) {
+// Función para crear una fila (ahora más flexible)
+function agregarFilaATabla(valorPrincipal, valorSecundario, tipo, index, contenedor) {
     const nuevaFila = document.createElement('div');
     nuevaFila.classList.add('fila');
-    if(tipo) nuevaFila.dataset.tipo = tipo;
-    if(index !== null) nuevaFila.dataset.index = index;
+    nuevaFila.dataset.tipo = tipo;
+    nuevaFila.dataset.index = index;
     
-    nuevaFila.innerHTML = `
-        <div class="columna-movil">
-            <input type="text" class="input-tabla" list="lista-moviles" value="${movil}" placeholder="Móvil...">
-        </div>
-        <div class="columna-nombre">
-            <input type="text" class="input-tabla" list="lista-choferes" value="${nombre}" placeholder="Chofer...">
-        </div>
-        <div class="columna-activo">
-            <input type="checkbox" checked>
-        </div>
-        <div class="columna-horario">
-            <input type="time" class="input-time">
-            <span>a</span>
-            <input type="time" class="input-time">
-        </div>
-        <div class="columna-acciones">
-            <button class="btn-editar">Editar</button>
-            <button class="btn-borrar">Borrar</button>
-        </div>
-    `;
+    if (tipo === 'chofer') {
+        nuevaFila.innerHTML = `
+            <div class="columna-nombre" style="flex: 1.5;">
+                <p class="texto-movil">${valorSecundario}</p>
+            </div>
+            <div class="columna-movil">
+                <input type="text" class="input-tabla" list="lista-moviles" value="${valorPrincipal}" placeholder="Asignar Móvil...">
+            </div>
+            <div class="columna-activo"><input type="checkbox" checked></div>
+            <div class="columna-horario">
+                <input type="time" class="input-time"> <span>a</span> <input type="time" class="input-time">
+            </div>
+            <div class="columna-acciones">
+                <button class="btn-editar">Editar</button>
+                <button class="btn-borrar">Borrar</button>
+            </div>
+        `;
+    } else {
+        nuevaFila.innerHTML = `
+            <div class="columna-movil">
+                <p class="texto-movil">Móvil ${valorPrincipal}</p>
+            </div>
+            <div class="columna-nombre" style="flex: 1.5;">
+                <input type="text" class="input-tabla" list="lista-choferes" value="${valorSecundario}" placeholder="Asignar Chofer...">
+            </div>
+            <div class="columna-activo"><input type="checkbox" checked></div>
+            <div class="columna-acciones">
+                <button class="btn-editar">Editar</button>
+                <button class="btn-borrar">Borrar</button>
+            </div>
+        `;
+    }
     
-    listaCuerpo.appendChild(nuevaFila);
+    contenedor.appendChild(nuevaFila);
 }
 
 // Delegación de eventos para la tabla de Choferes (Borrar y Editar)
@@ -375,7 +387,7 @@ btnConfirmar.addEventListener('click', () => {
                     const option = document.createElement('option');
                     option.value = datos.nombre;
                     listaChoferes.appendChild(option);
-                    agregarFilaATabla("", datos.nombre, 'chofer', choferesRegistrados.length - 1);
+                    cargarTablaChoferes();
                     cerrarModal();
                 } else {
                     alert("Error del servidor: " + (data.error || "Desconocido"));
@@ -419,7 +431,7 @@ btnConfirmar.addEventListener('click', () => {
                     const option = document.createElement('option');
                     option.value = datos.numero;
                     listaMoviles.appendChild(option);
-                    agregarFilaATabla(datos.numero, "", 'movil', movilesRegistrados.length - 1);
+                    cargarTablaChoferes();
                     cerrarModal();
                 } else {
                     alert("Error del servidor: " + (data.error || "Desconocido"));
@@ -463,18 +475,41 @@ function actualizarLocalStorage() {
 
 function cargarTablaChoferes() {
     if (!listaCuerpo) return;
-    // Limpiar tabla manteniendo el header
+    
+    // Creamos la estructura de dos secciones
     listaCuerpo.innerHTML = `
-        <div class="fila fila-header">
-            <p>Móvil</p>
-            <p>Nombre Chofer</p>
-            <p>Activo</p>
-            <p>Horario (Desde - Hasta)</p>
-            <p>Acciones</p>
+        <div class="seccion-tabla">
+            <h2 class="titulo-seccion">Personal (Choferes)</h2>
+            <div class="tabla-choferes">
+                <div class="fila fila-header">
+                    <p style="flex: 1.5;">Nombre Chofer</p>
+                    <p>Móvil Asignado</p>
+                    <p>Activo</p>
+                    <p>Horario</p>
+                    <p>Acciones</p>
+                </div>
+                <div id="cuerpo-choferes"></div>
+            </div>
+        </div>
+        <div class="seccion-tabla">
+            <h2 class="titulo-seccion">Flota (Móviles)</h2>
+            <div class="tabla-choferes">
+                <div class="fila fila-header">
+                    <p>Número Móvil</p>
+                    <p style="flex: 1.5;">Chofer Asignado</p>
+                    <p>Activo</p>
+                    <p>Acciones</p>
+                </div>
+                <div id="cuerpo-moviles"></div>
+            </div>
         </div>
     `;
-    choferesRegistrados.forEach((c, i) => agregarFilaATabla("", c.nombre, 'chofer', i));
-    movilesRegistrados.forEach((m, i) => agregarFilaATabla(m.numero, "", 'movil', i));
+
+    const divChoferes = document.getElementById('cuerpo-choferes');
+    const divMoviles = document.getElementById('cuerpo-moviles');
+
+    choferesRegistrados.forEach((c, i) => agregarFilaATabla("", c.nombre, 'chofer', i, divChoferes));
+    movilesRegistrados.forEach((m, i) => agregarFilaATabla(m.numero, "", 'movil', i, divMoviles));
 }
 
 // Carga inicial de datos en la tabla de DatosChoferes

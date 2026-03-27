@@ -27,38 +27,8 @@
     </nav>
 
     <main class="contenedor-lista">
-        <section class="tabla-choferes" id="lista-cuerpo">
-            <!-- Cabecera de la tabla -->
-            <div class="fila fila-header">
-                <p>Móvil</p>
-                <p>Nombre Chofer</p>
-                <p>Activo</p>
-                <p>Horario (Desde - Hasta)</p>
-                <p>Acciones</p>
-            </div>
-
-            <!-- Fila de ejemplo -->
-            <div class="fila">
-                <div class="columna-movil">
-                    <input type="text" class="input-tabla" list="lista-moviles" placeholder="Buscar móvil...">
-                </div>
-                <div class="columna-nombre">
-                    <input type="text" class="input-tabla" list="lista-choferes" placeholder="Buscar chofer...">
-                </div>
-                <div class="columna-activo">
-                    <input type="checkbox" checked>
-                </div>
-                <div class="columna-horario">
-                    <input type="time" class="input-time">
-                    <span>a</span>
-                    <input type="time" class="input-time">
-                </div>
-                <div class="columna-acciones">
-                    <button class="btn-editar">Editar</button>
-                    <button class="btn-borrar">Borrar</button>
-                </div>
-            </div>
-        </section>
+        <!-- Las tablas de Choferes y Móviles se generarán aquí desde app.js -->
+        <div id="lista-cuerpo"></div>
 
         <!-- Listas desplegables para búsqueda (Datalists) -->
         <!-- Aquí se cargarán los datos que agregues con los botones superiores -->

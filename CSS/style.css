@@ -116,6 +116,18 @@ body{
     text-align: center;
 }
 
+.titulo-seccion {
+    font-size: 2.4rem;
+    color: var(--AzulOscuro);
+    margin: 3rem 0 1.5rem 0;
+    border-left: 5px solid var(--AzulMedio);
+    padding-left: 1.5rem;
+}
+
+.seccion-tabla {
+    margin-bottom: 4rem;
+}
+
 .fila-header p {
     margin: 0;
     flex: 1;
