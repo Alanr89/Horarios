@@ -88,11 +88,7 @@ body{
 
 /* Listado de Choferes */
 .contenedor-lista {
-<<<<<<< HEAD
-    max-width: 1000px;
-=======
     max-width: 1550px; /* Ensanchamos el sector para que las columnas no se desplacen */
->>>>>>> 00f5f0b228d3589ee55f4f2d13993b97064abbd1
     margin: 2rem auto;
     padding: 0 2rem;
 }
@@ -208,24 +204,16 @@ select.input-tabla {
     box-shadow: 0 0 5px rgba(102, 153, 201, 0.3);
 }
 
-<<<<<<< HEAD
-.columna-movil, .columna-nombre, .columna-activo, .columna-horario, .columna-acciones, .columna-entrada, .columna-salida, .columna-hora, .columna-check {
-    flex: 1;
-=======
 .columna-movil, .columna-nombre, .columna-activo, .columna-horario, .columna-acciones, 
 .columna-entrada, .columna-salida, .columna-hora, .columna-check, .fila-header p,
 .columna-fecha, .columna-motivo, .columna-patente, .columna-tipo, .columna-operador {
->>>>>>> 00f5f0b228d3589ee55f4f2d13993b97064abbd1
     display: flex;
     justify-content: center;
     align-items: center;
     gap: 0.5rem;
-<<<<<<< HEAD
-=======
     margin: 0;
     text-align: center;
     flex: 1; /* Valor base */
->>>>>>> 00f5f0b228d3589ee55f4f2d13993b97064abbd1
 }
 
 .columna-check { flex: 0 0 50px; min-width: 50px; max-width: 50px; }

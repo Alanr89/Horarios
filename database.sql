@@ -1,7 +1,8 @@
-CREATE DATABASE IF NOT EXISTS sistema_choferes;
+DROP DATABASE IF EXISTS sistema_choferes;
+CREATE DATABASE sistema_choferes;
 USE sistema_choferes;
 
-CREATE TABLE IF NOT EXISTS choferes (
+CREATE TABLE choferes (
     id INT AUTO_INCREMENT PRIMARY KEY,
     nombre VARCHAR(100) NOT NULL,
     direccion VARCHAR(255),
@@ -11,7 +12,7 @@ CREATE TABLE IF NOT EXISTS choferes (
     licencia_hasta DATE
 );
 
-CREATE TABLE IF NOT EXISTS moviles (
+CREATE TABLE moviles (
     id INT AUTO_INCREMENT PRIMARY KEY,
     numero VARCHAR(20) NOT NULL UNIQUE,
     marca VARCHAR(50),
@@ -19,13 +20,29 @@ CREATE TABLE IF NOT EXISTS moviles (
     patente VARCHAR(20)
 );
 
-CREATE TABLE IF NOT EXISTS horarios (
+CREATE TABLE horarios (
     id INT AUTO_INCREMENT PRIMARY KEY,
     chofer_nombre VARCHAR(100),
     movil_numero VARCHAR(20),
     fecha DATE,
     entrada TIME,
     salida TIME,
-    activo TINYINT(1) DEFAULT 0,
-    UNIQUE KEY chofer_fecha (chofer_nombre, fecha)
+    activo TINYINT(1) DEFAULT 0
+);
+
+CREATE TABLE rendiciones (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    fecha DATE,
+    es_base TINYINT(1) DEFAULT 0,
+    es_chofer TINYINT(1) DEFAULT 0,
+    chofer_nombre VARCHAR(100),
+    motivo VARCHAR(255),
+    patente_caso VARCHAR(50),
+    tipo_entrada TINYINT(1) DEFAULT 0,
+    tipo_salida TINYINT(1) DEFAULT 0,
+    operador VARCHAR(100),
+    marca_adelanto TINYINT(1) DEFAULT 0,
+    marca_retiro TINYINT(1) DEFAULT 0,
+    marca_gastos TINYINT(1) DEFAULT 0,
+    marca_rindio TINYINT(1) DEFAULT 0
 );

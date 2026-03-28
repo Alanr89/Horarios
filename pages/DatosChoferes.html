@@ -7,7 +7,7 @@
     <link rel="preload" href="../CSS/style.css" as="style">
     <link rel="stylesheet" href="../CSS/normalize.css">
     <link rel="preload" href="../CSS/normalize.css" as="style">
-    <script src="../js/app.js" defer></script>
+    <script src="../js/datosChoferes.js" defer></script>
     <title>Datos de choferes</title>
 </head>
 <body class="body--duo">
@@ -140,9 +140,10 @@
                 </div>
             </div>
 
-            <div class="modal-botones">
-                <button id="btn-confirmar-mod-movil" class="btn-borrar" style="background-color: var(--AzulMedio);">Guardar Cambios</button>
-                <button id="btn-cancelar-mod-movil" class="btn-borrar">Cancelar</button>
+            <div class="modal-botones" style="flex-wrap: wrap; gap: 10px;">
+                <button id="btn-confirmar-mod-movil" class="btn-borrar" style="background-color: var(--AzulMedio); flex: 1;">Guardar Cambios</button>
+                <button id="btn-cancelar-mod-movil" class="btn-borrar" style="flex: 1;">Cancelar</button>
+                <button id="btn-borrar-movil-db" class="btn-borrar" style="width: 100%; margin-top: 10px;">Borrar Móvil</button>
             </div>
         </div>
     </div>
