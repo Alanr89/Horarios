@@ -207,10 +207,13 @@ function guardarFilaPlanilla(fila) {
             alert("Fila guardada exitosamente en la base de datos.");
             cargarDatosDesdeServidor();
         } else {
-            alert("Error al guardar: " + (data.error || "Datos duplicados."));
+            alert("Error de Base de Datos al guardar: " + (data.error || "Datos duplicados."));
         }
     })
-    .catch(err => alert("Error de conexión al guardar."));
+    .catch(err => {
+        console.error("Error en la conexión o parseo:", err);
+        alert("Error de conexión o fallo en el servidor. Revise la consola para más detalles.");
+    });
 }
 
 function eliminarFilaPlanilla(fila) {
