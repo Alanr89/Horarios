@@ -66,15 +66,21 @@ function cargarDatosDesdeServidor() {
 }
 
 function actualizarDatalists() {
+    const choferesActivos = choferesRegistrados.filter(c => c.activo == 1);
+
     if (listaChoferesDatalist) {
-        listaChoferesDatalist.innerHTML = choferesRegistrados.map(c => `<option value="${c.nombre}">${c.nombre}</option>`).join('');
+        listaChoferesDatalist.innerHTML = choferesActivos.map(c => `<option value="${c.nombre}">${c.nombre}</option>`).join('');
     }
     if (listaMovilesDatalist) {
         listaMovilesDatalist.innerHTML = movilesRegistrados.map(m => `<option value="${m.numero}">${m.numero}</option>`).join('');
     }
     if (selectChoferEdit) {
+        // El selector de edición muestra TODOS los choferes para poder reactivarlos.
         selectChoferEdit.innerHTML = '<option value="">-- Seleccione un chofer --</option>' + 
-            choferesRegistrados.map(c => `<option value="${c.id}">${c.nombre}</option>`).join('');
+            choferesRegistrados.sort((a, b) => a.nombre.localeCompare(b.nombre)).map(c => {
+                const estado = c.activo == 1 ? '' : ' (Inactivo)';
+                return `<option value="${c.id}">${c.nombre}${estado}</option>`;
+            }).join('');
     }
     if (buscarMovilEdit) {
         buscarMovilEdit.innerHTML = '<option value="">-- Seleccione un móvil --</option>' + 
@@ -221,7 +227,7 @@ function guardarFilaPlanilla(fila) {
 function eliminarFilaPlanilla(fila) {
     const id = fila.dataset.id;
 
-    if (confirm('¿Eliminar esta asignación permanentemente?')) {
+    if (confirm('¿Está seguro? Al borrar esta asignación, el chofer será marcado como INACTIVO en todo el sistema.')) {
         if (id) {
             fetch('../PHP/borrar_fila_planilla.php', {
                 method: 'POST',
@@ -348,6 +354,7 @@ if (selectChoferEdit) {
             document.getElementById('edit-chofer-dni').value = chofer.dni;
             document.getElementById('edit-chofer-licencia-desde').value = chofer.licencia_desde || chofer.licenciaDesde || "";
             document.getElementById('edit-chofer-licencia-hasta').value = chofer.licencia_hasta || chofer.licenciaHasta || "";
+            document.getElementById('edit-chofer-activo').checked = chofer.activo == 1;
         } else {
             choferIDSeleccionado = null;
             formModChoferCampos.classList.add('oculto');
@@ -364,7 +371,8 @@ if (btnConfirmarModChofer) {
             telefono: `${document.getElementById('edit-chofer-cod-area').value.trim()} ${document.getElementById('edit-chofer-nro-tel').value.trim()}`.trim(),
             dni: document.getElementById('edit-chofer-dni').value.trim(),
             licenciaDesde: document.getElementById('edit-chofer-licencia-desde').value,
-            licenciaHasta: document.getElementById('edit-chofer-licencia-hasta').value
+            licenciaHasta: document.getElementById('edit-chofer-licencia-hasta').value,
+            activo: document.getElementById('edit-chofer-activo').checked ? 1 : 0
         };
 
         fetch('../PHP/actualizar_chofer.php', { method: 'POST', body: JSON.stringify(datos), headers: { 'Content-Type': 'application/json' }})
@@ -378,10 +386,10 @@ if (btnBorrarChoferDB) {
     btnBorrarChoferDB.addEventListener('click', (e) => {
         e.preventDefault();
         if (!choferIDSeleccionado) { alert("Seleccione un chofer primero."); return; }
-        if (confirm("¿Borrar definitivamente a este chofer?")) {
+        if (confirm("¿Está seguro de que desea marcar a este chofer como INACTIVO?\n\nDesaparecerá de las listas pero su historial se conservará.")) {
             fetch('../PHP/borrar_chofer.php', { method: 'POST', body: JSON.stringify({ id: choferIDSeleccionado }), headers: { 'Content-Type': 'application/json' }})
             .then(res => res.json()).then(data => {
-                if(data.success) { alert("Chofer eliminado."); cargarDatosDesdeServidor(); cerrarModal(); } 
+                if(data.success) { alert("Chofer marcado como inactivo."); cargarDatosDesdeServidor(); cerrarModal(); } 
                 else { alert("Error: " + data.error); }
             });
         }
@@ -450,13 +458,21 @@ if (btnBorrarMovilDB) {
 // ==========================================
 if (btnExportar) {
     btnExportar.addEventListener('click', () => {
-        let csvContent = "\uFEFF--- DATOS DE CHOFERES ---\nNombre;Dirección;Teléfono;DNI;Licencia Desde;Licencia Hasta\n";
-        choferesRegistrados.forEach(c => csvContent += `${c.nombre};${c.direccion};${c.telefono};${c.dni};${c.licencia_desde};${c.licencia_hasta}\n`);
+        const choferesActivos = choferesRegistrados.filter(c => c.activo == 1);
+        const choferesInactivos = choferesRegistrados.filter(c => c.activo == 0);
+
+        let csvContent = "\uFEFF--- DATOS DE CHOFERES ACTIVOS ---\nNombre;Dirección;Teléfono;DNI;Licencia Desde;Licencia Hasta\n";
+        choferesActivos.forEach(c => csvContent += `${c.nombre};${c.direccion};${c.telefono};${c.dni};${c.licencia_desde || ''};${c.licencia_hasta || ''}\n`);
         
-        csvContent += "\n--- DATOS DE MÓVILES ---\nNúmero;Marca;Modelo;Patente\n";
+        if (choferesInactivos.length > 0) {
+            csvContent += "\n\n--- CHOFERES INACTIVOS ---\nNombre;Dirección;Teléfono;DNI;Licencia Desde;Licencia Hasta\n";
+            choferesInactivos.forEach(c => csvContent += `${c.nombre};${c.direccion};${c.telefono};${c.dni};${c.licencia_desde || ''};${c.licencia_hasta || ''}\n`);
+        }
+
+        csvContent += "\n\n--- DATOS DE MÓVILES ---\nNúmero;Marca;Modelo;Patente\n";
         movilesRegistrados.forEach(m => csvContent += `${m.numero};${m.marca};${m.modelo};${m.patente}\n`);
         
-        csvContent += "\n--- PLANILLA DE ASIGNACIÓN ACTUAL ---\nChofer;Móvil;Activo;Inicio;Fin\n";
+        csvContent += "\n\n--- PLANILLA DE ASIGNACIÓN ACTUAL ---\nChofer;Móvil;Activo;Inicio;Fin\n";
         document.querySelectorAll('.fila:not(.fila-header)').forEach(f => {
             const ch = f.querySelector('.input-p-chofer')?.value || "";
             const mo = f.querySelector('.input-p-movil')?.value || "";

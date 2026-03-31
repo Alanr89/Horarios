@@ -22,15 +22,27 @@ if ($data) {
                   VALUES ('$chofer', $movil, '$fecha', $entrada, $salida, $activo)";
     }
 
+    // Iniciar transacción
+    mysqli_begin_transaction($conexion);
+
     try {
-        if (mysqli_query($conexion, $query)) {
+        if (mysqli_query($conexion, $query)) { // Guardar o actualizar el horario
             $new_id = $id ? $id : mysqli_insert_id($conexion);
+
+            // Si se desactiva la asignación, también se desactiva al chofer globalmente
+            if ($activo == 0 && !empty($chofer)) {
+                $query_desactivar_chofer = "UPDATE choferes SET activo = 0 WHERE nombre = '$chofer'";
+                mysqli_query($conexion, $query_desactivar_chofer);
+            }
+
+            mysqli_commit($conexion); // Confirmar transacción
             echo json_encode(['success' => true, 'new_id' => $new_id]);
         } else {
+            mysqli_rollback($conexion); // Revertir en caso de error
             echo json_encode(['success' => false, 'error' => mysqli_error($conexion)]);
         }
     } catch (Exception $e) {
-        // Capturamos la excepción (PHP 8.1+) para evitar que rompa la respuesta JSON
+        mysqli_rollback($conexion);
         echo json_encode(['success' => false, 'error' => $e->getMessage()]);
     }
 } else {

@@ -7,7 +7,8 @@ $data = json_decode(file_get_contents('php://input'), true);
 if (isset($data['id'])) {
     $id = (int)$data['id'];
     
-    $query = "DELETE FROM choferes WHERE id = $id";
+    // Implementación de Baja Lógica (Soft Delete)
+    $query = "UPDATE choferes SET activo = 0 WHERE id = $id";
 
     if (mysqli_query($conexion, $query)) {
         if (mysqli_affected_rows($conexion) > 0) {

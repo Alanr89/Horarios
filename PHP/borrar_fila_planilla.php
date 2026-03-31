@@ -6,8 +6,30 @@ $data = json_decode(file_get_contents('php://input'), true);
 
 if (isset($data['id'])) {
     $id = (int)$data['id'];
-    $query = "DELETE FROM horarios WHERE id = $id";
-    mysqli_query($conexion, $query);
-    echo json_encode(['success' => true]);
+
+    mysqli_begin_transaction($conexion);
+
+    try {
+        // 1. Obtener el nombre del chofer antes de borrar la fila
+        $query_get_chofer = "SELECT chofer_nombre FROM horarios WHERE id = $id";
+        $result = mysqli_query($conexion, $query_get_chofer);
+        $chofer_nombre = mysqli_fetch_assoc($result)['chofer_nombre'];
+
+        // 2. Borrar la fila de la planilla
+        $query_delete_horario = "DELETE FROM horarios WHERE id = $id";
+        mysqli_query($conexion, $query_delete_horario);
+
+        // 3. Desactivar al chofer en la tabla de choferes
+        if ($chofer_nombre) {
+            $query_deactivate_chofer = "UPDATE choferes SET activo = 0 WHERE nombre = '$chofer_nombre'";
+            mysqli_query($conexion, $query_deactivate_chofer);
+        }
+
+        mysqli_commit($conexion);
+        echo json_encode(['success' => true]);
+    } catch (Exception $e) {
+        mysqli_rollback($conexion);
+        echo json_encode(['success' => false, 'error' => $e->getMessage()]);
+    }
 }
 ?>

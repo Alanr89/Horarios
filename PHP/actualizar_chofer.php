@@ -12,10 +12,12 @@ if ($data && isset($data['id'])) {
     $dni = mysqli_real_escape_string($conexion, $data['dni']);
     $desde = $data['licenciaDesde'];
     $hasta = $data['licenciaHasta'];
+    $activo = isset($data['activo']) ? (int)$data['activo'] : 0;
 
     $query = "UPDATE choferes SET 
               nombre='$nombre', direccion='$direccion', telefono='$telefono', 
-              dni='$dni', licencia_desde='$desde', licencia_hasta='$hasta' 
+              dni='$dni', licencia_desde='$desde', licencia_hasta='$hasta', 
+              activo=$activo 
               WHERE id=$id";
 
     if (mysqli_query($conexion, $query)) {

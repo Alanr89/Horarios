@@ -21,9 +21,9 @@
     </header>
 
     <nav class="botones--index" style="justify-content: space-around; width: 100%; max-width: 1200px; margin: 0 auto;">
-        <div class="buscador-fecha" style="width: auto; background: white; padding: 0.5rem 1.5rem; border-radius: 8px; border: 1px solid #ccc;">
+        <div class="buscador-fecha" onclick="document.getElementById('buscar-fecha').showPicker();">
             <label for="buscar-fecha">Consultar Día:</label>
-            <input type="date" id="buscar-fecha" class="input-tabla">
+            <input type="date" id="buscar-fecha" class="input-tabla" style="border: none; box-shadow: none; background: transparent; cursor: pointer; outline: none; width: auto;">
         </div>
         <button id="btn-exportar-horarios" class="Horarios" style="background-color: #28a745; color: white; border-color: #1e7e34;">Exportar Horarios</button>
     </nav>
@@ -33,12 +33,13 @@
             <!-- Cabecera de la tabla de horarios -->
             <div class="fila fila-header">
                 <div class="columna-check"><input type="checkbox" id="select-all"></div>
-                <p>Chofer</p>
-                <p>Móvil Asignado</p>
-                <p>Entrada</p>
-                <p>Horario Entrada</p>
-                <p>Salida</p>
-                <p>Horario Salida</p>
+                <p class="columna-nombre">Chofer</p>
+                <p class="columna-movil">Móvil Asignado</p>
+                <p class="columna-entrada">Entrada</p>
+                <p class="columna-hora">Horario Entrada</p>
+                <p class="columna-salida">Salida</p>
+                <p class="columna-hora">Horario Salida</p>
+                <p class="columna-acciones">Acciones</p>
             </div>
 
             <!-- Las filas se generarán automáticamente desde app.js -->

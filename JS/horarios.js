@@ -65,6 +65,16 @@ document.addEventListener('DOMContentLoaded', () => {
         cargarTablaHorarios(); // Initial load
     }
 
+    // Funcionalidad para el checkbox "seleccionar todo"
+    const selectAllCheckbox = document.getElementById('select-all');
+    if (selectAllCheckbox) {
+        selectAllCheckbox.addEventListener('change', (e) => {
+            const isChecked = e.target.checked;
+            const allRowCheckboxes = document.querySelectorAll('.row-checkbox');
+            allRowCheckboxes.forEach(checkbox => checkbox.checked = isChecked);
+        });
+    }
+
     // Exportar Horarios
     if (btnExportarHorarios) {
         btnExportarHorarios.addEventListener('click', () => {
@@ -146,7 +156,8 @@ function cargarTablaHorarios() {
     const hoy = new Date().toISOString().split('T')[0];
     const esPasado = fechaSeleccionada < hoy;
 
-    const choferesActivos = [...new Set(horariosRegistrados.filter(h => h.activo == 1).map(h => h.chofer))];
+    // Corrección: La lista de choferes a mostrar debe basarse en si el CHOFER está activo, no si su asignación de horario lo está.
+    const choferesActivos = choferesRegistrados.filter(c => c.activo == 1).map(c => c.nombre);
 
     choferesActivos.forEach(nombreChofer => {
         // Se remueve "&& h.id" para recolectar todos los turnos del chofer
@@ -279,14 +290,7 @@ function terminarTurno(boton) {
     .then(data => {
         if (data.success) {
             alert("Turno guardado correctamente en la base de datos.");
-            
-            fila.querySelector('.hora-entrada').value = '--:--';
-            fila.querySelector('.hora-salida').value = '--:--';
-            fila.querySelector('.btn-entrada').disabled = false;
-            fila.querySelector('.btn-salida').disabled = true;
-            fila.querySelector('.input-movil-asignado').disabled = false;
-            delete fila.dataset.id;
-
+            // Se quita la manipulación manual del DOM, ya que la siguiente función recarga y redibuja toda la tabla.
             cargarDatosDesdeServidor(); 
         } else {
             alert("Error al guardar horario: " + data.error);

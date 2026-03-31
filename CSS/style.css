@@ -372,4 +372,23 @@ select.input-tabla {
     gap: 1rem;
     font-size: 1.6rem;
     font-weight: bold;
+    background: white;
+    padding: 0.8rem 2rem;
+    border-radius: 25px;
+    border: 2px solid var(--AzulMedio);
+    box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+    cursor: pointer;
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+    color: var(--AzulOscuro);
+}
+
+.buscador-fecha:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 12px rgba(0,0,0,0.15);
+}
+
+.buscador-fecha label {
+    margin: 0;
+    cursor: pointer;
+    color: var(--AzulOscuro);
 }
