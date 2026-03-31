@@ -111,7 +111,7 @@ function cargarTablaChoferes() {
     const registrosHoy = horariosRegistrados.filter(reg => reg.fecha === hoy);
     registrosHoy.forEach(reg => agregarFilaAsignacion(cuerpoPlanilla, reg));
 
-    const minimoFilas = 4;
+    const minimoFilas = 6; // Incrementado para evitar quedarse sin filas visuales rápidamente
     const filasActuales = cuerpoPlanilla.children.length;
     for(let i = filasActuales; i < minimoFilas; i++) {
         agregarFilaAsignacion(cuerpoPlanilla);
@@ -207,7 +207,9 @@ function guardarFilaPlanilla(fila) {
             alert("Fila guardada exitosamente en la base de datos.");
             cargarDatosDesdeServidor();
         } else {
+            // Se añade console.error para que inspecciones si MySQL está rechazando la inserción.
             alert("Error de Base de Datos al guardar: " + (data.error || "Datos duplicados."));
+            console.error("Detalle del error SQL:", data.error);
         }
     })
     .catch(err => {

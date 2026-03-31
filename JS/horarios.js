@@ -149,7 +149,8 @@ function cargarTablaHorarios() {
     const choferesActivos = [...new Set(horariosRegistrados.filter(h => h.activo == 1).map(h => h.chofer))];
 
     choferesActivos.forEach(nombreChofer => {
-        let turnosEnDB = horariosRegistrados.filter(h => h.chofer === nombreChofer && h.fecha === fechaSeleccionada && h.id);
+        // Se remueve "&& h.id" para recolectar todos los turnos del chofer
+        let turnosEnDB = horariosRegistrados.filter(h => h.chofer === nombreChofer && h.fecha === fechaSeleccionada);
         const tieneTurnoAbierto = turnosEnDB.some(t => t.entrada !== '--:--' && (t.salida === '--:--'));
         let filasAMostrar = [...turnosEnDB];
         
@@ -206,6 +207,7 @@ function cargarTablaHorarios() {
 // Registro de Horarios (Entrada/Salida)
 function registrarEvento(boton, tipo) {
     const fila = boton.closest('.fila');
+    const id = fila.dataset.id || null;
     const nombreChofer = fila.querySelector('.texto-movil').textContent;
     const nroMovil = fila.querySelector('.input-movil-asignado').value.trim();
     const fechaSeleccionada = buscadorFecha.value;
@@ -219,7 +221,10 @@ function registrarEvento(boton, tipo) {
 
     if (!nroMovil) { alert("Debe asignar un número de móvil primero."); return; }
 
-    let registro = horariosRegistrados.find(h => h.chofer === nombreChofer && h.fecha === fechaSeleccionada);
+    // Diferenciamos los registros por su ID para permitir turnos múltiples en el mismo día
+    let registro = id 
+        ? horariosRegistrados.find(h => h.id == id) 
+        : horariosRegistrados.find(h => h.chofer === nombreChofer && h.fecha === fechaSeleccionada && !h.id);
 
     if (!registro) {
         registro = { chofer: nombreChofer, movil: nroMovil, fecha: fechaSeleccionada, entrada: '--:--', salida: '--:--' };
