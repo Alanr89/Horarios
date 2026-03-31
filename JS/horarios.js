@@ -47,8 +47,11 @@ function actualizarDatalists() {
     const dlMoviles = document.getElementById('lista-moviles-datalist');
     if(!dlChoferes || !dlMoviles) return;
 
-    dlChoferes.innerHTML = choferesRegistrados.map(c => `<option value="${c.nombre}">${c.nombre}</option>`).join('');
-    dlMoviles.innerHTML = movilesRegistrados.map(m => `<option value="${m.numero}">${m.numero}</option>`).join('');
+    const choferesActivos = choferesRegistrados.filter(c => c.activo != 0);
+    const movilesActivos = movilesRegistrados.filter(m => m.activo != 0);
+
+    dlChoferes.innerHTML = choferesActivos.map(c => `<option value="${c.nombre}">${c.nombre}</option>`).join('');
+    dlMoviles.innerHTML = movilesActivos.map(m => `<option value="${m.numero}">${m.numero}</option>`).join('');
 }
 
 document.addEventListener('DOMContentLoaded', () => {
@@ -156,8 +159,7 @@ function cargarTablaHorarios() {
     const hoy = new Date().toISOString().split('T')[0];
     const esPasado = fechaSeleccionada < hoy;
 
-    // Corrección: La lista de choferes a mostrar debe basarse en si el CHOFER está activo, no si su asignación de horario lo está.
-    const choferesActivos = choferesRegistrados.filter(c => c.activo == 1).map(c => c.nombre);
+    const choferesActivos = [...new Set(horariosRegistrados.filter(h => h.activo == 1).map(h => h.chofer))];
 
     choferesActivos.forEach(nombreChofer => {
         // Se remueve "&& h.id" para recolectar todos los turnos del chofer

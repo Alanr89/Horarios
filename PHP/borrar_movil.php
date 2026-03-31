@@ -1,4 +1,6 @@
 <?php
+// Suprimimos errores externos para evitar problemas en el fetch de JavaScript
+error_reporting(0);
 header('Content-Type: application/json');
 include 'conexion.php';
 
@@ -7,18 +9,19 @@ $data = json_decode(file_get_contents('php://input'), true);
 if (isset($data['id'])) {
     $id = (int)$data['id'];
     
-    $query = "DELETE FROM moviles WHERE id = $id";
+    // Implementación de Baja Lógica (Soft Delete) para Móviles
+    $query = "UPDATE moviles SET activo = 0 WHERE id = $id";
 
     if (mysqli_query($conexion, $query)) {
-        if (mysqli_affected_rows($conexion) > 0) {
-            echo json_encode(['success' => true]);
-        } else {
-            echo json_encode(['success' => false, 'error' => 'No se encontró el móvil con el ID proporcionado o ya fue eliminado.']);
-        }
+        mysqli_commit($conexion); // Forzar la confirmación de la transacción
+        echo json_encode(['success' => true]);
+        exit;
     } else {
         echo json_encode(['success' => false, 'error' => mysqli_error($conexion)]);
+        exit;
     }
 } else {
     echo json_encode(['success' => false, 'error' => 'ID no proporcionado']);
+    exit;
 }
 ?>

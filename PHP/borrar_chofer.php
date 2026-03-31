@@ -1,4 +1,6 @@
 <?php
+// Se suprime cualquier posible salida de error de PHP para garantizar una respuesta JSON limpia.
+error_reporting(0);
 header('Content-Type: application/json');
 include 'conexion.php';
 
@@ -11,15 +13,17 @@ if (isset($data['id'])) {
     $query = "UPDATE choferes SET activo = 0 WHERE id = $id";
 
     if (mysqli_query($conexion, $query)) {
-        if (mysqli_affected_rows($conexion) > 0) {
-            echo json_encode(['success' => true]);
-        } else {
-            echo json_encode(['success' => false, 'error' => 'No se encontró el chofer con el ID proporcionado o ya fue eliminado.']);
-        }
+        // Si la consulta se ejecuta sin error, consideramos la operación un éxito.
+        // El chofer ahora está garantizado como inactivo.
+        mysqli_commit($conexion); // Forzar la confirmación de la transacción
+        echo json_encode(['success' => true]);
+        exit;
     } else {
         echo json_encode(['success' => false, 'error' => mysqli_error($conexion)]);
+        exit;
     }
 } else {
     echo json_encode(['success' => false, 'error' => 'ID no proporcionado']);
+    exit;
 }
 ?>

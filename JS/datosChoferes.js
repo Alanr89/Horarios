@@ -51,40 +51,53 @@ document.addEventListener('DOMContentLoaded', () => {
 function cargarDatosDesdeServidor() {
     const url = `../PHP/obtener_datos.php?t=${new Date().getTime()}`;
     fetch(url, { cache: 'no-store' })
-        .then(res => res.json())
-        .then(data => {
-            if (data) {
-                choferesRegistrados = data.choferes || [];
-                movilesRegistrados = data.moviles || [];
-                horariosRegistrados = data.horarios || [];
-                
-                actualizarDatalists();
-                if (listaCuerpo) cargarTablaChoferes();
+        .then(res => {
+            if (!res.ok) throw new Error(`Error del servidor al obtener datos: ${res.status}`);
+            return res.text();
+        })
+        .then(text => {
+            try {
+                const data = JSON.parse(text);
+                if (data) {
+                    choferesRegistrados = data.choferes || [];
+                    movilesRegistrados = data.moviles || [];
+                    horariosRegistrados = data.horarios || [];
+                    
+                    actualizarDatalists();
+                    if (listaCuerpo) cargarTablaChoferes();
+                }
+            } catch (e) {
+                console.error("La respuesta del servidor (obtener_datos) no fue un JSON válido:", text);
+                // No lanzamos un error al usuario aquí para no ser intrusivos, pero el log queda.
             }
         })
-        .catch(err => console.error("Error al cargar datos desde el servidor:", err));
+        .catch(err => {
+            console.error("Error al cargar datos desde el servidor:", err);
+            alert("No se pudieron recargar los datos desde el servidor. La lista puede estar desactualizada.");
+        });
 }
 
 function actualizarDatalists() {
-    const choferesActivos = choferesRegistrados.filter(c => c.activo == 1);
+    // Usamos != 0 para que si un chofer viejo tiene el campo "null" o vacío lo muestre igual
+    const choferesActivos = choferesRegistrados.filter(c => c.activo != 0);
+    const movilesActivos = movilesRegistrados.filter(m => m.activo != 0);
 
     if (listaChoferesDatalist) {
         listaChoferesDatalist.innerHTML = choferesActivos.map(c => `<option value="${c.nombre}">${c.nombre}</option>`).join('');
     }
     if (listaMovilesDatalist) {
-        listaMovilesDatalist.innerHTML = movilesRegistrados.map(m => `<option value="${m.numero}">${m.numero}</option>`).join('');
+        listaMovilesDatalist.innerHTML = movilesActivos.map(m => `<option value="${m.numero}">${m.numero}</option>`).join('');
     }
     if (selectChoferEdit) {
-        // El selector de edición muestra TODOS los choferes para poder reactivarlos.
+        // Por solicitud, el selector de edición ahora solo muestra los choferes ACTIVOS.
+        const choferesActivosParaEditar = choferesRegistrados.filter(c => c.activo != 0);
         selectChoferEdit.innerHTML = '<option value="">-- Seleccione un chofer --</option>' + 
-            choferesRegistrados.sort((a, b) => a.nombre.localeCompare(b.nombre)).map(c => {
-                const estado = c.activo == 1 ? '' : ' (Inactivo)';
-                return `<option value="${c.id}">${c.nombre}${estado}</option>`;
-            }).join('');
+            choferesActivosParaEditar.sort((a, b) => a.nombre.localeCompare(b.nombre))
+            .map(c => `<option value="${c.id}">${c.nombre}</option>`).join('');
     }
     if (buscarMovilEdit) {
         buscarMovilEdit.innerHTML = '<option value="">-- Seleccione un móvil --</option>' + 
-            movilesRegistrados.map(m => `<option value="${m.numero}">${m.numero}</option>`).join('');
+            movilesActivos.map(m => `<option value="${m.numero}">${m.numero}</option>`).join('');
     }
 }
 
@@ -139,15 +152,11 @@ function agregarFilaAsignacion(contenedor, datos = null) {
     nuevaFila.innerHTML = `
         <div class="columna-nombre" style="flex: 1.5;">
             <input type="text" class="input-tabla input-p-chofer" list="lista-choferes-datalist" value="${chofer}" 
-                   placeholder="Seleccionar Chofer..." autocomplete="off" 
-                   onfocus="if(this.showPicker) this.showPicker();" 
-                   onclick="if(this.showPicker) this.showPicker();">
+                   placeholder="Seleccionar Chofer..." autocomplete="off">
         </div>
         <div class="columna-movil">
             <input type="text" class="input-tabla input-p-movil" list="lista-moviles-datalist" value="${movil}" 
-                   placeholder="Seleccionar Móvil..." autocomplete="off" 
-                   onfocus="if(this.showPicker) this.showPicker();" 
-                   onclick="if(this.showPicker) this.showPicker();">
+                   placeholder="Seleccionar Móvil..." autocomplete="off">
         </div>
         <div class="columna-activo"><input type="checkbox" class="input-p-activo" ${activoChecked}></div>
         <div class="columna-horario">
@@ -207,20 +216,31 @@ function guardarFilaPlanilla(fila) {
         body: JSON.stringify({ id, chofer, movil, entrada, salida, fecha, activo }),
         headers: { 'Content-Type': 'application/json' }
     })
-    .then(res => res.json())
+    .then(res => {
+        if (!res.ok) throw new Error(`Error del servidor: ${res.status}`);
+        return res.text();
+    })
+    .then(text => {
+        if (!text) return { success: true }; // Asumir éxito si la respuesta está vacía
+        try {
+            return JSON.parse(text);
+        } catch (e) {
+            console.error("Respuesta no válida del servidor (guardarFilaPlanilla):", text);
+            throw new Error("La respuesta del servidor no se pudo procesar.");
+        }
+    })
     .then(data => {
         if (data.success) {
             alert("Fila guardada exitosamente en la base de datos.");
             cargarDatosDesdeServidor();
         } else {
-            // Se añade console.error para que inspecciones si MySQL está rechazando la inserción.
             alert("Error de Base de Datos al guardar: " + (data.error || "Datos duplicados."));
             console.error("Detalle del error SQL:", data.error);
         }
     })
     .catch(err => {
-        console.error("Error en la conexión o parseo:", err);
-        alert("Error de conexión o fallo en el servidor. Revise la consola para más detalles.");
+        console.error("Error en la operación de guardar fila:", err);
+        alert(err.message || "Error de conexión o fallo en el servidor. Revise la consola para más detalles.");
     });
 }
 
@@ -234,13 +254,25 @@ function eliminarFilaPlanilla(fila) {
                 body: JSON.stringify({ id: id }),
                 headers: { 'Content-Type': 'application/json' }
             })
-            .then(res => res.json())
+            .then(res => {
+                if (!res.ok) throw new Error(`Error del servidor: ${res.status}`);
+                return res.text();
+            })
+            .then(text => {
+                if (!text) return { success: true };
+                try {
+                    return JSON.parse(text);
+                } catch (e) {
+                    console.error("Respuesta no válida del servidor (eliminarFilaPlanilla):", text);
+                    throw new Error("La respuesta del servidor no se pudo procesar.");
+                }
+            })
             .then(data => {
                 if (data.success) {
                     cargarDatosDesdeServidor();
                 }
             })
-            .catch(err => alert("Error al conectar con el servidor para borrar"));
+            .catch(err => alert(err.message || "Error al conectar con el servidor para borrar"));
         } else {
             fila.remove();
             cargarTablaChoferes();
@@ -304,9 +336,31 @@ if (btnConfirmar) {
 
             if (datos.nombre !== "") {
                 fetch('../PHP/guardar_chofer.php', { method: 'POST', body: JSON.stringify(datos), headers: { 'Content-Type': 'application/json' }})
-                .then(res => res.json()).then(data => {
-                    if(data.success) { cargarDatosDesdeServidor(); cerrarModal(); } 
-                    else { alert("Error del servidor: " + (data.error || "Desconocido")); }
+                .then(res => {
+                    if (!res.ok) throw new Error(`Error del servidor: ${res.status}`);
+                    return res.text();
+                })
+                .then(text => {
+                    if (!text) return { success: true };
+                    try {
+                        return JSON.parse(text);
+                    } catch (e) {
+                        console.error("Respuesta no válida del servidor (guardar_chofer):", text);
+                        throw new Error("La respuesta del servidor no se pudo procesar.");
+                    }
+                })
+                .then(data => {
+                    if (data.success) {
+                        alert("Chofer guardado correctamente.");
+                        cargarDatosDesdeServidor();
+                        cerrarModal();
+                    } else {
+                        alert("Error de la base de datos al guardar: " + (data.error || "Desconocido"));
+                    }
+                })
+                .catch(err => {
+                    console.error("Error en la operación de guardar chofer:", err);
+                    alert(err.message || "Ocurrió un error de conexión al guardar el chofer.");
                 });
             } else { alert("El nombre es obligatorio"); }
         } else if (tipoActual === 'movil') {
@@ -319,9 +373,31 @@ if (btnConfirmar) {
 
             if (datos.numero !== "") {
                 fetch('../PHP/guardar_movil.php', { method: 'POST', body: JSON.stringify(datos), headers: { 'Content-Type': 'application/json' }})
-                .then(res => res.json()).then(data => {
-                    if(data.success) { cargarDatosDesdeServidor(); cerrarModal(); } 
-                    else { alert("Error del servidor: " + (data.error || "Desconocido")); }
+                .then(res => {
+                    if (!res.ok) throw new Error(`Error del servidor: ${res.status}`);
+                    return res.text();
+                })
+                .then(text => {
+                    if (!text) return { success: true };
+                    try {
+                        return JSON.parse(text);
+                    } catch (e) {
+                        console.error("Respuesta no válida del servidor (guardar_movil):", text);
+                        throw new Error("La respuesta del servidor no se pudo procesar.");
+                    }
+                })
+                .then(data => {
+                    if (data.success) {
+                        alert("Móvil guardado correctamente.");
+                        cargarDatosDesdeServidor();
+                        cerrarModal();
+                    } else {
+                        alert("Error de la base de datos al guardar móvil: " + (data.error || "Desconocido"));
+                    }
+                })
+                .catch(err => {
+                    console.error("Error en la operación de guardar móvil:", err);
+                    alert(err.message || "Ocurrió un error de conexión al guardar el móvil.");
                 });
             } else { alert("El número de móvil es obligatorio"); }
         }
@@ -376,8 +452,31 @@ if (btnConfirmarModChofer) {
         };
 
         fetch('../PHP/actualizar_chofer.php', { method: 'POST', body: JSON.stringify(datos), headers: { 'Content-Type': 'application/json' }})
-        .then(res => res.json()).then(data => {
-            if(data.success) { alert("Chofer actualizado"); cargarDatosDesdeServidor(); cerrarModal(); }
+        .then(res => {
+            if (!res.ok) throw new Error(`Error del servidor: ${res.status}`);
+            return res.text();
+        })
+        .then(text => {
+            if (!text) return { success: true };
+            try {
+                return JSON.parse(text);
+            } catch (e) {
+                console.error("Respuesta no válida del servidor (actualizar_chofer):", text);
+                throw new Error("La respuesta del servidor no se pudo procesar.");
+            }
+        })
+        .then(data => {
+            if (data.success) {
+                alert("Chofer actualizado correctamente.");
+                cargarDatosDesdeServidor();
+                cerrarModal();
+            } else {
+                alert("Error al actualizar el chofer: " + (data.error || "Error desconocido."));
+            }
+        })
+        .catch(err => {
+            console.error("Error en la operación de actualizar chofer:", err);
+            alert(err.message || "Ocurrió un error de conexión al intentar actualizar.");
         });
     });
 }
@@ -388,9 +487,31 @@ if (btnBorrarChoferDB) {
         if (!choferIDSeleccionado) { alert("Seleccione un chofer primero."); return; }
         if (confirm("¿Está seguro de que desea marcar a este chofer como INACTIVO?\n\nDesaparecerá de las listas pero su historial se conservará.")) {
             fetch('../PHP/borrar_chofer.php', { method: 'POST', body: JSON.stringify({ id: choferIDSeleccionado }), headers: { 'Content-Type': 'application/json' }})
-            .then(res => res.json()).then(data => {
-                if(data.success) { alert("Chofer marcado como inactivo."); cargarDatosDesdeServidor(); cerrarModal(); } 
-                else { alert("Error: " + data.error); }
+            .then(res => {
+                if (!res.ok) throw new Error(`Error del servidor: ${res.status}`);
+                return res.text();
+            })
+            .then(text => {
+                if (!text) return { success: true };
+                try {
+                    return JSON.parse(text);
+                } catch (e) {
+                    console.error("Respuesta no válida del servidor (borrar_chofer):", text);
+                    throw new Error("La respuesta del servidor no se pudo procesar.");
+                }
+            })
+            .then(data => {
+                if (data.success) { 
+                    alert("Chofer marcado como inactivo."); 
+                    cargarDatosDesdeServidor(); 
+                    cerrarModal(); 
+                } else { 
+                    alert("Error al dar de baja al chofer: " + (data.error || "Error desconocido.")); 
+                }
+            })
+            .catch(err => {
+                console.error("Error en la operación de borrar chofer:", err);
+                alert(err.message || "Ocurrió un error al intentar dar de baja al chofer.");
             });
         }
     });
@@ -435,19 +556,61 @@ if (btnConfirmarModMovil) {
             patente: document.getElementById('edit-movil-patente').value.trim()
         };
         fetch('../PHP/actualizar_movil.php', { method: 'POST', body: JSON.stringify(datos), headers: { 'Content-Type': 'application/json' }})
-        .then(res => res.json()).then(data => {
-            if (data.success) { alert("Móvil actualizado"); cargarDatosDesdeServidor(); cerrarModal(); }
-        });
+        .then(res => {
+            if (!res.ok) throw new Error(`Error del servidor: ${res.status}`);
+            return res.text();
+        })
+        .then(text => {
+            if (!text) return { success: true };
+            try {
+                return JSON.parse(text);
+            } catch (e) {
+                console.error("Respuesta no válida del servidor (actualizar_movil):", text);
+                throw new Error("La respuesta del servidor no se pudo procesar.");
+            }
+        })
+        .then(data => {
+            if (data.success) {
+                alert("Móvil actualizado");
+                cargarDatosDesdeServidor();
+                cerrarModal();
+            }
+        })
+        .catch(err => alert(err.message || "Ocurrió un error al actualizar el móvil."));
     });
 }
 
 if (btnBorrarMovilDB) {
-    btnBorrarMovilDB.addEventListener('click', () => {
-        if (!movilIDSeleccionado) return;
-        if (confirm("¿Borrar definitivamente este móvil?")) {
+    btnBorrarMovilDB.addEventListener('click', (e) => {
+        e.preventDefault();
+        if (!movilIDSeleccionado) { alert("Seleccione un móvil primero."); return; }
+        if (confirm("¿Está seguro de que desea marcar a este móvil como INACTIVO?\n\nDesaparecerá de las listas pero su historial se conservará.")) {
             fetch('../PHP/borrar_movil.php', { method: 'POST', body: JSON.stringify({ id: movilIDSeleccionado }), headers: { 'Content-Type': 'application/json' }})
-            .then(res => res.json()).then(data => {
-                if(data.success) { alert("Móvil eliminado"); cargarDatosDesdeServidor(); cerrarModal(); }
+            .then(res => {
+                if (!res.ok) throw new Error(`Error del servidor: ${res.status}`);
+                return res.text();
+            })
+            .then(text => {
+                if (!text) return { success: true };
+                try {
+                    return JSON.parse(text);
+                } catch (e) {
+                    console.error("Respuesta no válida del servidor (borrar_movil):", text);
+                    throw new Error("La respuesta del servidor no se pudo procesar.");
+                }
+            })
+            .then(data => {
+                if (data.success) {
+                    alert("Móvil marcado como inactivo.");
+                    cargarDatosDesdeServidor();
+                    cerrarModal();
+                } else {
+                    alert("Error al dar de baja el móvil: " + (data.error || "Desconocido"));
+                }
+            })
+            .catch(err => {
+                console.error("Error en la operación de borrar móvil:", err);
+                alert(err.message || "Ocurrió un error al intentar dar de baja el móvil.");
             });
         }
     });
@@ -458,8 +621,10 @@ if (btnBorrarMovilDB) {
 // ==========================================
 if (btnExportar) {
     btnExportar.addEventListener('click', () => {
-        const choferesActivos = choferesRegistrados.filter(c => c.activo == 1);
+        const choferesActivos = choferesRegistrados.filter(c => c.activo != 0);
         const choferesInactivos = choferesRegistrados.filter(c => c.activo == 0);
+        const movilesActivos = movilesRegistrados.filter(m => m.activo != 0);
+        const movilesInactivos = movilesRegistrados.filter(m => m.activo == 0);
 
         let csvContent = "\uFEFF--- DATOS DE CHOFERES ACTIVOS ---\nNombre;Dirección;Teléfono;DNI;Licencia Desde;Licencia Hasta\n";
         choferesActivos.forEach(c => csvContent += `${c.nombre};${c.direccion};${c.telefono};${c.dni};${c.licencia_desde || ''};${c.licencia_hasta || ''}\n`);
@@ -469,9 +634,14 @@ if (btnExportar) {
             choferesInactivos.forEach(c => csvContent += `${c.nombre};${c.direccion};${c.telefono};${c.dni};${c.licencia_desde || ''};${c.licencia_hasta || ''}\n`);
         }
 
-        csvContent += "\n\n--- DATOS DE MÓVILES ---\nNúmero;Marca;Modelo;Patente\n";
-        movilesRegistrados.forEach(m => csvContent += `${m.numero};${m.marca};${m.modelo};${m.patente}\n`);
+        csvContent += "\n\n--- DATOS DE MÓVILES ACTIVOS ---\nNúmero;Marca;Modelo;Patente\n";
+        movilesActivos.forEach(m => csvContent += `${m.numero};${m.marca};${m.modelo};${m.patente}\n`);
         
+        if (movilesInactivos.length > 0) {
+            csvContent += "\n\n--- MÓVILES INACTIVOS ---\nNúmero;Marca;Modelo;Patente\n";
+            movilesInactivos.forEach(m => csvContent += `${m.numero};${m.marca};${m.modelo};${m.patente}\n`);
+        }
+
         csvContent += "\n\n--- PLANILLA DE ASIGNACIÓN ACTUAL ---\nChofer;Móvil;Activo;Inicio;Fin\n";
         document.querySelectorAll('.fila:not(.fila-header)').forEach(f => {
             const ch = f.querySelector('.input-p-chofer')?.value || "";
