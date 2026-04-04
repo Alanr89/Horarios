@@ -21,4 +21,3 @@ if (isset($data['id'])) {
 } else {
     echo json_encode(['success' => false, 'error' => 'ID no proporcionado']);
 }
-?>
