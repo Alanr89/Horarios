@@ -15,6 +15,7 @@ let choferesRegistrados = JSON.parse(localStorage.getItem('choferes')) || [];
 let movilesRegistrados = JSON.parse(localStorage.getItem('moviles')) || [];
 let horariosRegistrados = JSON.parse(localStorage.getItem('horarios')) || [];
 let rendicionesRegistradas = JSON.parse(localStorage.getItem('rendiciones')) || [];
+let turnosEnCurso = JSON.parse(localStorage.getItem('turnosEnCurso')) || [];
 
 // Función para cargar datos desde MySQL al iniciar
 function cargarDatosDesdeServidor() {
@@ -56,7 +57,8 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // Listener para el buscador de fecha
     if (buscadorFecha) {
-        const hoy = new Date().toISOString().split('T')[0];
+        const ahora = new Date();
+        const hoy = `${ahora.getFullYear()}-${String(ahora.getMonth() + 1).padStart(2, '0')}-${String(ahora.getDate()).padStart(2, '0')}`;
         buscadorFecha.value = hoy;
         buscadorFecha.addEventListener('change', cargarTablaHorarios);
         buscadorFecha.addEventListener('click', function() {
@@ -95,7 +97,8 @@ document.addEventListener('DOMContentLoaded', () => {
             const datosFiltrados = horariosRegistrados.filter(h => 
                 h.fecha >= desde && 
                 h.fecha <= hasta && 
-                seleccionados.includes(h.chofer)
+                seleccionados.includes(h.chofer) &&
+                ((typeof h.entrada === 'string' && h.entrada.length > 5) || (typeof h.salida === 'string' && h.salida.length > 5))
             );
 
             if (datosFiltrados.length === 0) {
@@ -112,11 +115,12 @@ document.addEventListener('DOMContentLoaded', () => {
             let csvContent = "\uFEFF"; // BOM para Excel UTF-8
             Object.keys(agrupadosPorFecha).sort().forEach(fecha => {
                 csvContent += `FECHA DEL REGISTRO: ${fecha}\n`;
-                csvContent += `Chofer;Móvil;Entrada;Salida\n`;
+                csvContent += `Chofer;Móvil;Entrada;Salida;Horas Trabajadas\n`;
                 agrupadosPorFecha[fecha].forEach(reg => {
-                    const ent = (reg.entrada && reg.entrada !== '--:--' && reg.entrada !== '00:00') ? reg.entrada : "NULL";
-                    const sal = (reg.salida && reg.salida !== '--:--' && reg.salida !== '00:00') ? reg.salida : "NULL";
-                    csvContent += `${reg.chofer};${reg.movil};${ent};${sal}\n`;
+                    const ent = (reg.entrada && reg.entrada !== '--:--' && reg.entrada !== '00:00' && reg.entrada !== '00:00:00') ? reg.entrada : "NULL";
+                    const sal = (reg.salida && reg.salida !== '--:--' && reg.salida !== '00:00' && reg.salida !== '00:00:00') ? reg.salida : "NULL";
+                    const horas = calcularHorasTrabajadas(ent, sal);
+                    csvContent += `${reg.chofer};${reg.movil};${ent};${sal};${horas}\n`;
                 });
                 csvContent += `\n`;
             });
@@ -137,38 +141,64 @@ document.addEventListener('DOMContentLoaded', () => {
 function cargarTablaHorarios() {
     if (!tablaHorariosBody) return;
 
+    // Asegurar que exista el título "Planilla de Horarios" arriba de la tabla
+    if (!document.getElementById('titulo-planilla-horarios')) {
+        const titulo = document.createElement('h2');
+        titulo.id = 'titulo-planilla-horarios';
+        titulo.className = 'titulo-planilla';
+        titulo.textContent = 'Planilla de Horarios';
+        
+        const contenedorTabla = tablaHorariosBody.closest('.tabla-choferes') || tablaHorariosBody.parentElement;
+        if (contenedorTabla && contenedorTabla.parentNode) {
+            contenedorTabla.parentNode.insertBefore(titulo, contenedorTabla);
+        }
+    }
+
     const fechaSeleccionada = buscadorFecha.value;
     const filas = tablaHorariosBody.querySelectorAll('.fila:not(.fila-header)');
     filas.forEach(f => f.remove());
 
     if (!fechaSeleccionada) return;
 
-    const hoy = new Date().toISOString().split('T')[0];
+    const ahora = new Date();
+    const hoy = `${ahora.getFullYear()}-${String(ahora.getMonth() + 1).padStart(2, '0')}-${String(ahora.getDate()).padStart(2, '0')}`;
     const esPasado = fechaSeleccionada < hoy;
 
-    const choferesActivos = [...new Set(horariosRegistrados.filter(h => h.activo == 1).map(h => h.chofer))];
-
-    choferesActivos.forEach(nombreChofer => {
-        // Se remueve "&& h.id" para recolectar todos los turnos del chofer
-        let turnosEnDB = horariosRegistrados.filter(h => h.chofer === nombreChofer && h.fecha === fechaSeleccionada);
-        const tieneTurnoAbierto = turnosEnDB.some(t => t.entrada !== '--:--' && (t.salida === '--:--'));
-        let filasAMostrar = [...turnosEnDB];
-        
-        if (!tieneTurnoAbierto) {
-            filasAMostrar.push({ id: null, chofer: nombreChofer, movil: '', entrada: '--:--', salida: '--:--' });
+    // Obtener todas las asignaciones tildadas como activas para la fecha
+    // Se filtran solo los registros base
+    const asignacionesActivas = horariosRegistrados.filter(h => 
+        h.activo == 1 && 
+        h.fecha === fechaSeleccionada &&
+        !(typeof h.entrada === 'string' && (h.entrada.length > 5 || h.entrada.includes('/'))) &&
+        !(typeof h.salida === 'string' && (h.salida.length > 5 || h.salida.includes('/')))
+    );
+    
+    // Evitar duplicados si un chofer se cargó dos veces por accidente en la planilla
+    const choferesUnicos = [];
+    const asignacionesUnicas = [];
+    asignacionesActivas.forEach(a => {
+        if (!choferesUnicos.includes(a.chofer)) {
+            choferesUnicos.push(a.chofer);
+            asignacionesUnicas.push(a);
         }
+    });
 
-        filasAMostrar.forEach((registro) => {
-            const nuevaFila = document.createElement('div');
-            nuevaFila.classList.add('fila');
-            if (registro.id) nuevaFila.dataset.id = registro.id;
-            
-            const movilAsignado = registro.movil || '';
-            const entradaHora = (registro.entrada && registro.entrada !== '--:--') ? registro.entrada : (esPasado ? 'NULL' : '--:--');
-            const salidaHora = (registro.salida && registro.salida !== '--:--') ? registro.salida : (esPasado ? 'NULL' : '--:--');
-            
-            const entradaDisabled = (entradaHora !== '--:--' && entradaHora !== 'NULL') ? 'disabled' : '';
-            const salidaDisabled = (entradaHora === '--:--' || entradaHora === 'NULL' || (salidaHora !== '--:--' && salidaHora !== 'NULL')) ? 'disabled' : '';
+    asignacionesUnicas.forEach(asignacion => {
+        const nombreChofer = asignacion.chofer;
+        const movilAsignado = asignacion.movil || '';
+        
+        // Buscar si el chofer ya tiene un turno en curso guardado localmente para que sobreviva al F5
+        const turnoPendiente = turnosEnCurso.find(t => t.chofer === nombreChofer && t.fecha === fechaSeleccionada);
+
+        const nuevaFila = document.createElement('div');
+        nuevaFila.classList.add('fila');
+        
+        // Recuperar la hora si existe en la BD, si no, dejarlos vacíos
+        const entradaHora = (turnoPendiente && turnoPendiente.entrada) ? turnoPendiente.entrada : '--:--';
+        const salidaHora = (turnoPendiente && turnoPendiente.salida) ? turnoPendiente.salida : '--:--';
+        
+        const entradaDisabled = (entradaHora !== '--:--') ? 'disabled' : '';
+        const salidaDisabled = (entradaHora === '--:--' || salidaHora !== '--:--') ? 'disabled' : '';
 
             nuevaFila.innerHTML = `
                 <div class="columna-check">
@@ -200,15 +230,13 @@ function cargarTablaHorarios() {
                 </div>
             `;
             tablaHorariosBody.appendChild(nuevaFila);
-        });
     });
 }
 
 // Registro de Horarios (Entrada/Salida)
 function registrarEvento(boton, tipo) {
     const fila = boton.closest('.fila');
-    const id = fila.dataset.id || null;
-    const nombreChofer = fila.querySelector('.texto-movil').textContent;
+    const nombreChofer = fila.querySelector('.columna-nombre p').textContent;
     const nroMovil = fila.querySelector('.input-movil-asignado').value.trim();
     const fechaSeleccionada = buscadorFecha.value;
     const ahora = new Date();
@@ -216,49 +244,49 @@ function registrarEvento(boton, tipo) {
     const dia = ahora.getDate().toString().padStart(2, '0');
     const mes = (ahora.getMonth() + 1).toString().padStart(2, '0');
     const anio = ahora.getFullYear();
-    const tiempo = ahora.toLocaleTimeString('es-AR', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
-    const timestampCompleto = `${dia}/${mes}/${anio} ${tiempo}`;
+    const horas = ahora.getHours().toString().padStart(2, '0');
+    const minutos = ahora.getMinutes().toString().padStart(2, '0');
+    const segundos = ahora.getSeconds().toString().padStart(2, '0');
+    const timestampCompleto = `${dia}/${mes}/${anio} ${horas}:${minutos}:${segundos}`;
 
-    if (!nroMovil) { alert("Debe asignar un número de móvil primero."); return; }
+    let entrada = fila.querySelector('.hora-entrada').value;
+    let salida = fila.querySelector('.hora-salida').value;
 
-    // Diferenciamos los registros por su ID para permitir turnos múltiples en el mismo día
-    let registro = id 
-        ? horariosRegistrados.find(h => h.id == id) 
-        : horariosRegistrados.find(h => h.chofer === nombreChofer && h.fecha === fechaSeleccionada && !h.id);
-
-    if (!registro) {
-        registro = { chofer: nombreChofer, movil: nroMovil, fecha: fechaSeleccionada, entrada: '--:--', salida: '--:--' };
-        horariosRegistrados.push(registro);
+    let turnoPendiente = turnosEnCurso.find(t => t.chofer === nombreChofer && t.fecha === fechaSeleccionada);
+    if (!turnoPendiente) {
+        turnoPendiente = { chofer: nombreChofer, fecha: fechaSeleccionada, movil: nroMovil, entrada: '--:--', salida: '--:--' };
+        turnosEnCurso.push(turnoPendiente);
     }
 
     if (tipo === 'entrada') {
-        registro.entrada = timestampCompleto;
-        fila.querySelector('.hora-entrada').value = timestampCompleto;
+        entrada = timestampCompleto;
+        turnoPendiente.entrada = entrada;
+        fila.querySelector('.hora-entrada').value = entrada;
         fila.querySelector('.btn-salida').disabled = false;
+        boton.disabled = true;
     } else {
-        registro.salida = timestampCompleto;
-        fila.querySelector('.hora-salida').value = timestampCompleto;
+        salida = timestampCompleto;
+        turnoPendiente.salida = salida;
+        fila.querySelector('.hora-salida').value = salida;
+        boton.disabled = true;
     }
 
-    actualizarLocalStorage();
-    boton.disabled = true;
-    fila.querySelector('.input-movil-asignado').disabled = true;
+    localStorage.setItem('turnosEnCurso', JSON.stringify(turnosEnCurso));
 }
 
 function terminarTurno(boton) {
     const fila = boton.closest('.fila');
-    const id = fila.dataset.id || null;
     const nombreChofer = fila.querySelector('.columna-nombre p').textContent;
     const nroMovil = fila.querySelector('.input-movil-asignado').value.trim();
     const fechaSeleccionada = buscadorFecha.value;
     const entrada = fila.querySelector('.hora-entrada').value;
     const salida = fila.querySelector('.hora-salida').value;
 
-    if (entrada === '--:--') {
+    if (!entrada || entrada === '--:--' || entrada === 'NULL') {
         alert("Debe registrar la entrada antes de terminar el turno.");
         return;
     }
-    if (salida === '--:--') {
+    if (!salida || salida === '--:--' || salida === 'NULL') {
         alert("Debe registrar la salida antes de terminar el turno.");
         return;
     }
@@ -266,12 +294,13 @@ function terminarTurno(boton) {
     fetch('../PHP/guardar_horario.php', {
         method: 'POST',
         body: JSON.stringify({
-            id: id,
+            id: null,
             chofer: nombreChofer,
             movil: nroMovil,
             fecha: fechaSeleccionada,
             entrada: entrada,
-            salida: salida
+            salida: salida,
+            activo: 3 // 3 = Turno Finalizado. Evita rotundamente que Planilla Choferes lo absorba de vuelta.
         }),
         headers: { 'Content-Type': 'application/json' }
     })
@@ -280,16 +309,48 @@ function terminarTurno(boton) {
         if (data.success) {
             alert("Turno guardado correctamente en la base de datos.");
             
+            // Limpiar del LocalStorage
+            turnosEnCurso = turnosEnCurso.filter(t => !(t.chofer === nombreChofer && t.fecha === fechaSeleccionada));
+            localStorage.setItem('turnosEnCurso', JSON.stringify(turnosEnCurso));
+
+            // Resetear los cuadros para un nuevo turno
             fila.querySelector('.hora-entrada').value = '--:--';
             fila.querySelector('.hora-salida').value = '--:--';
             fila.querySelector('.btn-entrada').disabled = false;
             fila.querySelector('.btn-salida').disabled = true;
-            fila.querySelector('.input-movil-asignado').disabled = false;
-            delete fila.dataset.id;
 
+            // Refrescar los datos de fondo para reportes
             cargarDatosDesdeServidor(); 
         } else {
             alert("Error al guardar horario: " + data.error);
         }
-    });
+    })
+    .catch(err => alert("Error de conexión al guardar el turno."));
+}
+
+// Utilidad para calcular las horas trabajadas en el reporte Excel
+function calcularHorasTrabajadas(entradaStr, salidaStr) {
+    if (!entradaStr || !salidaStr || entradaStr === 'NULL' || salidaStr === 'NULL' || !entradaStr.includes('/') || !salidaStr.includes('/')) {
+        return "0";
+    }
+    
+    const parseFecha = (str) => {
+        const partes = str.split(' ');
+        if (partes.length !== 2) return null;
+        const [dia, mes, anio] = partes[0].split('/');
+        const hora = partes[1];
+        return new Date(`${anio}-${mes}-${dia}T${hora}`);
+    };
+
+    const fEntrada = parseFecha(entradaStr);
+    const fSalida = parseFecha(salidaStr);
+    
+    if (!fEntrada || !fSalida || isNaN(fEntrada) || isNaN(fSalida)) return "0";
+    
+    const diffMs = fSalida - fEntrada;
+    if (diffMs <= 0) return "0";
+    
+    let horas = (diffMs / (1000 * 60 * 60)).toFixed(2);
+    if (horas.endsWith('.00')) horas = horas.replace('.00', '');
+    return horas;
 }

@@ -160,7 +160,7 @@ body{
 }
 
 /* Forzar que el triángulo del datalist sea siempre visible y actúe como botón */
-input::-webkit-calendar-picker-indicator {
+input[list]::-webkit-calendar-picker-indicator {
     display: block !important;
     opacity: 1 !important;
     cursor: pointer;
