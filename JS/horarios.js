@@ -105,108 +105,123 @@ document.addEventListener('DOMContentLoaded', () => {
         btnConfirmarExport.addEventListener('click', () => {
             const desde = fechaDesdeExport.value;
             const hasta = fechaHastaExport.value;
-            const seleccionados = Array.from(document.querySelectorAll('.row-checkbox:checked')).map(cb => cb.dataset.chofer);
+            const seleccionados = Array.from(document.querySelectorAll('.row-checkbox:checked')).map(cb => cb.dataset.chofer ? cb.dataset.chofer.trim() : '');
 
             if (!desde || !hasta || seleccionados.length === 0) {
                 alert("Debe seleccionar fechas y al menos un chofer.");
                 return;
             }
 
-            const datosFiltrados = [];
             // Unimos el historial de la base de datos con los turnos que actualmente están en curso
             const todosLosRegistros = [...horariosRegistrados, ...turnosEnCurso];
+            const datosPorChofer = {};
+
+            // Inicializar el agrupador para asegurar que todos los seleccionados aparezcan en el Excel
+            seleccionados.forEach(chofer => {
+                datosPorChofer[chofer] = [];
+            });
 
             todosLosRegistros.forEach(h => {
-                if (!seleccionados.includes(h.chofer)) return;
+                if (!h.chofer) return;
+                const choferStr = String(h.chofer).trim();
+                if (!seleccionados.includes(choferStr)) return;
                 
+                // Saber si el turno está 100% finalizado (activo == 3)
+                const esTurnoReal = (parseInt(h.activo) === 3);
+
                 let ent = (h.entrada && h.entrada !== '--:--' && h.entrada !== '00:00:00' && h.entrada !== 'NULL') ? h.entrada : null;
                 let sal = (h.salida && h.salida !== '--:--' && h.salida !== '00:00:00' && h.salida !== 'NULL') ? h.salida : null;
                 
-                // Excluir estrictamente los horarios cortos que vienen de planilla choferes (que no tienen barra de fecha)
-                if (ent && (!ent.includes('/') || ent.length <= 5)) ent = null;
-                if (sal && (!sal.includes('/') || sal.length <= 5)) sal = null;
+                // Si el turno no está finalizado o es una asignación teórica, no calculamos horas (se reportará como NULL)
+                if (!esTurnoReal) {
+                    ent = null;
+                    sal = null;
+                }
 
-                // Si no hay ninguna marca de horario real, ignoramos este registro para el excel
-                if (!ent && !sal) return;
-
-                const getFechaISO = (str) => {
-                    if (!str || typeof str !== 'string' || str.length < 10) return null;
-                    if (str.includes('/')) {
-                        const p = str.split(' ')[0].split('/');
-                        if (p.length === 3) return `${p[2]}-${p[1]}-${p[0]}`;
+                const normalizeToISO = (timeStr, baseDate) => {
+                    if (!timeStr) return null;
+                    if (timeStr.includes(' ')) {
+                        let [d, t] = timeStr.split(' ');
+                        if (d.includes('/')) {
+                            const p = d.split('/');
+                            d = p[2].length === 4 ? `${p[2]}-${p[1]}-${p[0]}` : `${p[0]}-${p[1]}-${p[2]}`;
+                        } else if (d.includes('-')) {
+                            const p = d.split('-');
+                            d = p[0].length === 4 ? `${p[0]}-${p[1]}-${p[2]}` : `${p[2]}-${p[1]}-${p[0]}`;
+                        }
+                        return `${d} ${t.substring(0, 5)}`; // Extraer solo HH:mm
+                    } else {
+                        return `${baseDate} ${timeStr.substring(0, 5)}`;
                     }
-                    if (str.includes('-')) {
-                        const p = str.split(' ')[0].split('-');
-                        if (p.length === 3) return `${p[0]}-${p[1]}-${p[2]}`;
-                    }
-                    return null;
                 };
 
-                const fEntrada = getFechaISO(ent) || h.fecha; // Usamos fecha base si falla el parseo principal
-                const fSalida = getFechaISO(sal);
+                const entISO = normalizeToISO(ent, h.fecha);
+                const salISO = normalizeToISO(sal, h.fecha);
+
+                // Si es un turno real pero sin fechas válidas, lo omitimos
+                if (esTurnoReal && !entISO && !salISO) return;
+
+                const fEntrada = entISO ? entISO.split(' ')[0] : h.fecha;
+                const fSalida = salISO ? salISO.split(' ')[0] : null;
                 
                 const inicio = fEntrada;
                 const fin = fSalida || '9999-12-31'; // Si no terminó aún, lo estiramos al infinito para el cálculo
 
                 // Comprobación inquebrantable de Solapamiento
                 if (inicio <= hasta && fin >= desde) {
-                    let displayEnt = ent || "NULL";
-                    let displaySal = sal || "NULL";
+                    let displayEnt = entISO || "NULL";
+                    let displaySal = salISO || "NULL";
 
                     // Si la salida es posterior al rango que queremos ver, la ocultamos temporalmente
                     if (fSalida && fSalida > hasta) displaySal = "NULL";
 
-                    // Agrupamos en la fecha de finalización si cae en rango, si no en la de inicio
-                    let fechaGrupo = (fSalida && fSalida >= desde && fSalida <= hasta) ? fSalida : fEntrada;
-                    
-                    // Aseguramos que se agrupe dentro del archivo de excel del día correspondiente
-                    if (fechaGrupo < desde) fechaGrupo = desde;
-                    if (fechaGrupo > hasta) fechaGrupo = hasta;
-
-                    datosFiltrados.push({
-                        fechaGrupo: fechaGrupo, chofer: h.chofer, movil: h.movil, entrada: displayEnt, salida: displaySal
+                    datosPorChofer[choferStr].push({
+                        esTurnoReal: esTurnoReal,
+                        fecha: h.fecha,
+                        movil: h.movil || "NULL",
+                        entrada: displayEnt,
+                        salida: displaySal
                     });
                 }
             });
 
-            if (datosFiltrados.length === 0) {
-                alert("No hay registros ni turnos en curso para los criterios seleccionados.");
-                return;
-            }
-
-            const agrupadosPorFecha = datosFiltrados.reduce((acc, curr) => {
-                if (!acc[curr.fechaGrupo]) acc[curr.fechaGrupo] = [];
-                acc[curr.fechaGrupo].push(curr);
-                return acc;
-            }, {});
-
             let csvContent = "\uFEFF"; // BOM para Excel UTF-8
-            Object.keys(agrupadosPorFecha).sort().forEach(fecha => {
-                const [a, m, d] = fecha.split('-');
-                csvContent += `FECHA DEL REGISTRO: ${d}/${m}/${a}\n`;
-                csvContent += `Chofer;Móvil;Fecha Entrada;Entrada;Fecha Salida;Salida;Horas Trabajadas;Total\n`;
-                
-                // Agrupar los turnos de este día por cada chofer
-                const turnosPorChofer = agrupadosPorFecha[fecha].reduce((acc, curr) => {
-                    if (!acc[curr.chofer]) acc[curr.chofer] = [];
-                    acc[curr.chofer].push(curr);
-                    return acc;
-                }, {});
+            const [aD, mD, dD] = desde.split('-');
+            const [aH, mH, dH] = hasta.split('-');
+            csvContent += `REPORTE DE HORARIOS DESDE: ${dD}/${mD}/${aD} HASTA: ${dH}/${mH}/${aH}\n\n`;
+            csvContent += `Chofer;Móvil;Fecha Entrada;Entrada;Fecha Salida;Salida;Horas Trabajadas\n`;
 
-                // Recorrer a los choferes alfabéticamente
-                Object.keys(turnosPorChofer).sort().forEach(chofer => {
-                    const turnos = turnosPorChofer[chofer];
-                    // Ordenar por horario de entrada para que aparezcan en secuencia cronológica
-                    turnos.sort((t1, t2) => (t1.entrada === "NULL" ? 1 : t2.entrada === "NULL" ? -1 : t1.entrada.localeCompare(t2.entrada)));
+            seleccionados.sort().forEach(chofer => {
+                let turnos = datosPorChofer[chofer] || [];
+                
+                // Filtrar para quedarse con los turnos reales
+                const turnosReales = turnos.filter(t => t.esTurnoReal);
+                
+                if (turnosReales.length > 0) {
+                    turnos = turnosReales;
+                } else {
+                    // Si no tiene turnos reales, usamos un registro nulo para sacar el número de móvil, o lo creamos vacío si no hay
+                    const movilBase = turnos.length > 0 ? turnos[0].movil : "NULL";
+                    turnos = [{ esTurnoReal: false, movil: movilBase, entrada: "NULL", salida: "NULL", fecha: "NULL" }];
+                }
+
+                // Ordenar cronológicamente
+                turnos.sort((a, b) => {
+                    if (a.entrada === "NULL") return 1;
+                    if (b.entrada === "NULL") return -1;
+                    return a.entrada.localeCompare(b.entrada);
+                });
 
                     let sumaTotalMinutos = 0;
 
                     turnos.forEach((reg, index) => {
-                        const calculo = calcularHorasTrabajadas(reg.entrada, reg.salida);
-                        sumaTotalMinutos += calculo.minutos;
+                        let calculo = { minutos: 0, texto: "00:00" };
+                        if (reg.esTurnoReal) {
+                            calculo = calcularHorasTrabajadas(reg.entrada, reg.salida);
+                            sumaTotalMinutos += calculo.minutos;
+                        }
                         
-                        const celdaChofer = index === 0 ? reg.chofer : ""; // Solo imprime el nombre en el primer turno
-                        const celdaTotal = index === turnos.length - 1 ? formatoMinutosATexto(sumaTotalMinutos) : ""; // Solo imprime el total en el último turno
+                        const celdaChofer = index === 0 ? chofer : ""; 
 
                         // Separar fecha y hora para la Entrada
                         let fechaEnt = "NULL", horaEnt = "NULL";
@@ -214,6 +229,10 @@ document.addEventListener('DOMContentLoaded', () => {
                             const partesE = reg.entrada.split(' ');
                             fechaEnt = partesE[0] || "";
                             horaEnt = partesE[1] || "";
+                        if (fechaEnt.includes('-')) {
+                            const p = fechaEnt.split('-');
+                            if (p[0].length === 4) fechaEnt = `${p[2]}/${p[1]}/${p[0]}`;
+                        }
                         }
 
                         // Separar fecha y hora para la Salida
@@ -222,11 +241,19 @@ document.addEventListener('DOMContentLoaded', () => {
                             const partesS = reg.salida.split(' ');
                             fechaSal = partesS[0] || "";
                             horaSal = partesS[1] || "";
+                        if (fechaSal.includes('-')) {
+                            const p = fechaSal.split('-');
+                            if (p[0].length === 4) fechaSal = `${p[2]}/${p[1]}/${p[0]}`;
+                        }
                         }
 
-                        csvContent += `${celdaChofer};${reg.movil};${fechaEnt};${horaEnt};${fechaSal};${horaSal};${calculo.texto};${celdaTotal}\n`;
+                        csvContent += `${celdaChofer};${reg.movil};${fechaEnt};${horaEnt};${fechaSal};${horaSal};${calculo.texto}\n`;
                     });
-                });
+
+                // Si tuvo turnos reales, se imprime la fila de TOTAL al final de sus turnos
+                if (turnosReales.length > 0) {
+                    csvContent += `;;;;;TOTAL ${chofer};${formatoMinutosATexto(sumaTotalMinutos)}\n`;
+                }
                 csvContent += `\n`;
             });
 
@@ -351,8 +378,8 @@ function registrarEvento(boton, tipo) {
     const anio = ahora.getFullYear();
     const horas = ahora.getHours().toString().padStart(2, '0');
     const minutos = ahora.getMinutes().toString().padStart(2, '0');
-    const segundos = ahora.getSeconds().toString().padStart(2, '0');
-    const timestampCompleto = `${dia}/${mes}/${anio} ${horas}:${minutos}:${segundos}`;
+    // Removidos los segundos para que los registros queden puramente en HH:mm
+    const timestampCompleto = `${dia}/${mes}/${anio} ${horas}:${minutos}`;
 
     let entrada = fila.querySelector('.hora-entrada').value;
     let salida = fila.querySelector('.hora-salida').value;
@@ -448,37 +475,30 @@ function terminarTurno(boton) {
 
 // Utilidad para calcular las horas trabajadas en el reporte Excel
 function calcularHorasTrabajadas(entradaStr, salidaStr) {
-    if (!entradaStr || !salidaStr || entradaStr === 'NULL' || salidaStr === 'NULL' || !entradaStr.includes('/') || !salidaStr.includes('/')) {
-        return { minutos: 0, texto: "0h 0m" };
+    if (!entradaStr || !salidaStr || entradaStr === 'NULL' || salidaStr === 'NULL') {
+        return { minutos: 0, texto: "00:00" };
     }
     
-    const parseFecha = (str) => {
-        const partes = str.split(' ');
-        if (partes.length !== 2) return null;
-        const [dia, mes, anio] = partes[0].split('/');
-        const hora = partes[1];
-        return new Date(`${anio}-${mes}-${dia}T${hora}`);
-    };
-
-    const fEntrada = parseFecha(entradaStr);
-    const fSalida = parseFecha(salidaStr);
+    // Las fechas vienen normalizadas a "YYYY-MM-DD HH:mm" desde la exportación
+    const fEntrada = new Date(entradaStr.replace(' ', 'T'));
+    const fSalida = new Date(salidaStr.replace(' ', 'T'));
     
-    if (!fEntrada || !fSalida || isNaN(fEntrada) || isNaN(fSalida)) return { minutos: 0, texto: "0h 0m" };
+    if (isNaN(fEntrada) || isNaN(fSalida)) return { minutos: 0, texto: "00:00" };
     
     const diffMs = fSalida - fEntrada;
-    if (diffMs <= 0) return { minutos: 0, texto: "0h 0m" };
+    if (diffMs <= 0) return { minutos: 0, texto: "00:00" };
     
     const totalMinutos = Math.floor(diffMs / (1000 * 60));
-    const h = Math.floor(totalMinutos / 60);
-    const m = totalMinutos % 60;
+    const h = Math.floor(totalMinutos / 60).toString().padStart(2, '0');
+    const m = (totalMinutos % 60).toString().padStart(2, '0');
     
-    return { minutos: totalMinutos, texto: `${h}h ${m}m` };
+    return { minutos: totalMinutos, texto: `${h}:${m}` };
 }
 
 // Función auxiliar para formatear la suma total de minutos
 function formatoMinutosATexto(totalMinutos) {
-    if (totalMinutos <= 0) return "0h 0m";
-    const h = Math.floor(totalMinutos / 60);
-    const m = totalMinutos % 60;
-    return `${h}h ${m}m`;
+    if (totalMinutos <= 0) return "00:00";
+    const h = Math.floor(totalMinutos / 60).toString().padStart(2, '0');
+    const m = (totalMinutos % 60).toString().padStart(2, '0');
+    return `${h}:${m}`;
 }

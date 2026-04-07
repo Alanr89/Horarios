@@ -16,10 +16,10 @@ $moviles = mysqli_fetch_all($resMoviles, MYSQLI_ASSOC);
 
 // Obtener Horarios
 $resHorarios = mysqli_query($conexion, "
-    SELECT id, chofer_nombre AS chofer, movil_numero AS movil, fecha, 
-    TIME_FORMAT(entrada, '%H:%i') AS entrada, 
-    TIME_FORMAT(salida, '%H:%i') AS salida, 
-    activo 
+    SELECT id, chofer_nombre AS chofer, movil_numero AS movil, fecha,
+    entrada,
+    salida,
+    activo
     FROM horarios");
 $horarios = mysqli_fetch_all($resHorarios, MYSQLI_ASSOC);
 
