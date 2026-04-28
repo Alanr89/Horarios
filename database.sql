@@ -30,9 +30,9 @@ CREATE TABLE horarios (
     activo TINYINT(1) DEFAULT 0
 );
 
-CREATE TABLE rendiciones (
+CREATE TABLE IF NOT EXISTS rendiciones (
     id INT AUTO_INCREMENT PRIMARY KEY,
-    fecha DATE,
+    fecha DATE NOT NULL,
     es_base TINYINT(1) DEFAULT 0,
     es_chofer TINYINT(1) DEFAULT 0,
     chofer_nombre VARCHAR(100),

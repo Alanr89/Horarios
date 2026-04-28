@@ -296,11 +296,10 @@ function cargarTablaHorarios() {
     const hoy = `${ahora.getFullYear()}-${String(ahora.getMonth() + 1).padStart(2, '0')}-${String(ahora.getDate()).padStart(2, '0')}`;
     const esPasado = fechaSeleccionada < hoy;
 
-    // Obtener todas las asignaciones tildadas como activas para la fecha
-    // Se filtran solo los registros base
+    // Obtener todas las asignaciones tildadas como activas en la base (Planilla fija)
+    // Se elimina el filtro de fecha para que la base aplique a cualquier día seleccionado
     const asignacionesActivas = horariosRegistrados.filter(h => 
         h.activo == 1 && 
-        h.fecha === fechaSeleccionada &&
         !(typeof h.entrada === 'string' && (h.entrada.length > 5 || h.entrada.includes('/'))) &&
         !(typeof h.salida === 'string' && (h.salida.length > 5 || h.salida.includes('/')))
     );

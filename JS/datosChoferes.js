@@ -105,17 +105,14 @@ function cargarTablaChoferes() {
     `;
 
     const cuerpoPlanilla = document.getElementById('cuerpo-planilla');
-    const ahora = new Date();
-    const hoy = `${ahora.getFullYear()}-${String(ahora.getMonth() + 1).padStart(2, '0')}-${String(ahora.getDate()).padStart(2, '0')}`;
     
     // Traer SOLO los registros base (se ignoran turnos de horarios finalizados activo=3 o en curso activo=2)
-    const registrosHoy = horariosRegistrados.filter(reg => 
-        reg.fecha === hoy && 
+    const registrosBase = horariosRegistrados.filter(reg => 
         (reg.activo == 0 || reg.activo == 1) && 
         !(typeof reg.entrada === 'string' && (reg.entrada.length > 5 || reg.entrada.includes('/'))) && 
         !(typeof reg.salida === 'string' && (reg.salida.length > 5 || reg.salida.includes('/')))
     );
-    registrosHoy.forEach(reg => agregarFilaAsignacion(cuerpoPlanilla, reg));
+    registrosBase.forEach(reg => agregarFilaAsignacion(cuerpoPlanilla, reg));
 
     const minimoFilas = 6; // Incrementado para evitar quedarse sin filas visuales rápidamente
     const filasActuales = cuerpoPlanilla.children.length;
@@ -196,7 +193,6 @@ function guardarFilaPlanilla(fila) {
     // VALIDACIÓN: Avisa que el usuario está duplicando al chofer, pero permite continuar si acepta.
     const choferDuplicado = horariosRegistrados.find(h => 
         h.chofer === chofer && 
-        h.fecha === fecha && 
         h.id != id &&
         (h.activo == 0 || h.activo == 1) &&
         !(typeof h.entrada === 'string' && (h.entrada.length > 5 || h.entrada.includes('/'))) &&
