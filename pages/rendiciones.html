@@ -25,6 +25,7 @@
             <label for="fecha-rendicion">Consultar Día:</label>
             <input type="date" id="fecha-rendicion" class="input-tabla" style="width: 150px; border: none; font-size: 1.6rem;">
         </div>
+        <button id="btn-exportar-rendiciones" class="Horarios" style="background-color: #28a745; color: white; border-color: #1e7e34; margin: 0;">Exportar Excel</button>
         <button id="btn-nueva-rendicion" class="Horarios" style="margin: 0;">Nueva rendición</button>
     </nav>
 
@@ -36,6 +37,7 @@
                 <p class="columna-motivo">Motivo</p>
                 <p class="columna-patente">Patente / Nro Caso</p>
                 <p class="columna-tipo">Tipo</p>
+                <p class="columna-monto">Monto</p>
                 <p class="columna-operador">Operador</p>
                 <p class="columna-acciones">Acción</p>
             </div>
@@ -85,6 +87,11 @@
                 </div>
 
                 <div class="campo">
+                    <label for="rendicion-monto">Monto a Rendir ($)</label>
+                    <input type="number" id="rendicion-monto" class="input-tabla" step="0.01" placeholder="Ej: 1500.50">
+                </div>
+
+                <div class="campo">
                     <label for="rendicion-operador">Operador</label>
                     <input type="text" id="rendicion-operador" class="input-tabla" maxlength="50" placeholder="Máx 50 caracteres">
                 </div>
@@ -103,6 +110,25 @@
             <div class="modal-botones" style="flex-wrap: wrap; gap: 10px;">
                 <button id="btn-guardar-rendicion" class="btn-guardar" style="flex: 1;">Guardar</button>
                 <button id="btn-cancelar-rendicion" class="btn-borrar" style="flex: 1;">Cancelar</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal para Exportar Rendiciones -->
+    <div id="modal-exportar-rendiciones" class="modal-overlay oculto">
+        <div class="modal-contenido">
+            <h2>Exportar Reporte de Rendiciones</h2>
+            <div class="campo">
+                <label for="rend-export-desde">Desde Fecha:</label>
+                <input type="date" id="rend-export-desde" class="input-tabla">
+            </div>
+            <div class="campo">
+                <label for="rend-export-hasta">Hasta Fecha:</label>
+                <input type="date" id="rend-export-hasta" class="input-tabla">
+            </div>
+            <div class="modal-botones">
+                <button id="btn-confirmar-export-rend" class="btn-borrar" style="background-color: var(--AzulMedio);">Exportar</button>
+                <button id="btn-cancelar-export-rend" class="btn-borrar">Cancelar</button>
             </div>
         </div>
     </div>
